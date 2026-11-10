@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ar"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a"><link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png"><title>InkPad</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<section id="home">
+<h1>InkPad</h1>
+<div class="acts">
+<label class="btn p">📄 فتح PDF<input id="fp" type="file" accept="application/pdf,.pdf" hidden></label>
+<button class="btn" id="nn">📝 ملاحظة جديدة</button>
+<select id="tpl"><option value="blank">أبيض</option><option value="lines">سطور</option><option value="grid">مربعات</option><option value="dots">نقاط</option></select>
+</div>
+<div id="list"></div>
+</section>
+<section id="ed" hidden>
+<div id="top"><button id="bk">←</button><b id="ttl"></b><button id="pn"></button><button id="ex">⬇ PDF</button></div>
+<div id="sc"><div id="pgs"></div></div>
+<div id="tb">
+<button data-t="hand">✋</button><button data-t="pen" class="on">✏️</button><button data-t="hl">🖍</button><button data-t="er">🧽</button><button data-t="tx">T</button><button data-t="sh">▭</button>
+<select id="shs"><option value="line">خط</option><option value="rect">مستطيل</option><option value="ell">دائرة</option></select>
+<button id="un">↶</button><button id="re">↷</button>
+<span id="cl" style="display:contents"></span><input id="co" type="color" value="#1e40af">
+<input id="wd" type="range" min="1" max="12" value="3">
+<button id="zo">➖</button><button id="zi">➕</button><button id="ap" hidden>📄＋</button>
+</div>
+</section>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="app.js"></script>
+</body></html>
