@@ -14,16 +14,18 @@
 <div id="list"></div>
 </section>
 <section id="ed" hidden>
-<div id="top"><button id="bk">←</button><b id="ttl"></b><button id="pn"></button><button id="ex">⬇ PDF</button></div>
+<div id="top"><button id="bk">←</button><b id="ttl"></b><button id="sq" hidden>🔍</button><button id="pn"></button><button id="ex">⬇ PDF</button></div>
+<div id="sb" hidden><input id="si" type="search" dir="auto" placeholder="بحث في الملف" enterkeyhint="search"><button id="sp">▲</button><button id="sn">▼</button><span id="cnt"></span><button id="sx">✕</button></div>
 <div id="sc"><div id="pgs"></div></div>
 <div id="tb">
-<button data-t="hand">✋</button><button data-t="pen" class="on">✏️</button><button data-t="hl">🖍</button><button data-t="er">🧽</button><button data-t="tx">T</button><button data-t="sh">▭</button>
+<button id="tp"></button><button data-t="hand">✋</button><button data-t="pen" class="on">✏️</button><button data-t="hl">🖍</button><button data-t="er">🧽</button><button data-t="tx">T</button><button data-t="sh">▭</button>
 <select id="shs"><option value="line">خط</option><option value="rect">مستطيل</option><option value="ell">دائرة</option></select>
 <button id="un">↶</button><button id="re">↷</button>
 <span id="cl" style="display:contents"></span><input id="co" type="color" value="#1e40af">
 <input id="wd" type="range" min="1" max="12" value="3">
 <button id="zo">➖</button><button id="zi">➕</button><button id="ap" hidden>📄＋</button>
 </div>
+<div id="sa" hidden><button class="sw" data-h="#facc15" style="background:#facc15"></button><button class="sw" data-h="#4ade80" style="background:#4ade80"></button><button class="sw" data-h="#f472b6" style="background:#f472b6"></button><button id="cp">📋 نسخ</button></div>
 </section>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
