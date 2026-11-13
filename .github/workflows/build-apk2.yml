@@ -1,0 +1,252 @@
+name: Build APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Write build files and build APK
+        run: |
+          cat > package.json <<'EOF'
+          {
+            "name": "inkpad-android",
+            "version": "1.0.0",
+            "private": true,
+            "dependencies": {
+              "@capacitor/android": "^6.2.0",
+              "@capacitor/cli": "^6.2.0",
+              "@capacitor/core": "^6.2.0",
+              "@capacitor/filesystem": "^6.0.0",
+              "@capacitor/share": "^6.0.0"
+            }
+          }
+          EOF
+          cat > capacitor.config.json <<'EOF'
+          {
+            "appId": "com.inkpad.app",
+            "appName": "InkPad",
+            "webDir": "www",
+            "backgroundColor": "#0f172a"
+          }
+          EOF
+          mkdir -p native
+          cat > native/InkOpenPlugin.java <<'EOF'
+          package com.inkpad.app;
+
+          import android.content.Intent;
+          import android.database.Cursor;
+          import android.net.Uri;
+          import android.provider.OpenableColumns;
+          import android.util.Base64;
+
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+
+          import java.io.ByteArrayOutputStream;
+          import java.io.InputStream;
+
+          @CapacitorPlugin(name = "InkOpen")
+          public class InkOpenPlugin extends Plugin {
+
+              /** Called from MainActivity with the launching / new intent. */
+              public void handle(Intent intent) {
+                  if (intent == null || intent.getBooleanExtra("ink_handled", false)) return;
+                  String action = intent.getAction();
+                  Uri uri = null;
+                  if (Intent.ACTION_VIEW.equals(action)) {
+                      uri = intent.getData();
+                  } else if (Intent.ACTION_SEND.equals(action)) {
+                      uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
+                  }
+                  if (uri == null) return;
+                  intent.putExtra("ink_handled", true);
+                  final Uri u = uri;
+                  new Thread(() -> {
+                      try {
+                          String name = "file.pdf";
+                          try (Cursor c = getContext().getContentResolver().query(u, null, null, null, null)) {
+                              if (c != null && c.moveToFirst()) {
+                                  int i = c.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                                  if (i >= 0) name = c.getString(i);
+                              }
+                          } catch (Exception ignored) {}
+                          ByteArrayOutputStream out = new ByteArrayOutputStream();
+                          try (InputStream in = getContext().getContentResolver().openInputStream(u)) {
+                              byte[] buf = new byte[65536];
+                              int n;
+                              while ((n = in.read(buf)) > 0) out.write(buf, 0, n);
+                          }
+                          JSObject o = new JSObject();
+                          o.put("name", name);
+                          o.put("data", Base64.encodeToString(out.toByteArray(), Base64.NO_WRAP));
+                          // retained until JS adds its listener (cold start)
+                          notifyListeners("fileOpened", o, true);
+                      } catch (Exception e) {
+                          JSObject o = new JSObject();
+                          o.put("error", String.valueOf(e.getMessage()));
+                          notifyListeners("fileOpened", o, true);
+                      }
+                  }).start();
+              }
+          }
+          EOF
+          mkdir -p native
+          cat > native/MainActivity.java <<'EOF'
+          package com.inkpad.app;
+
+          import android.content.Intent;
+          import android.os.Bundle;
+
+          import com.getcapacitor.BridgeActivity;
+          import com.getcapacitor.PluginHandle;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(InkOpenPlugin.class);
+                  super.onCreate(savedInstanceState);
+                  open(getIntent());
+              }
+
+              @Override
+              protected void onNewIntent(Intent intent) {
+                  super.onNewIntent(intent);
+                  setIntent(intent);
+                  open(intent);
+              }
+
+              private void open(Intent intent) {
+                  PluginHandle h = getBridge().getPlugin("InkOpen");
+                  if (h != null) ((InkOpenPlugin) h.getInstance()).handle(intent);
+              }
+          }
+          EOF
+          mkdir -p native
+          cat > native/native.js <<'EOF'
+          // Native bridge for the Android build only. Loaded after extra.js.
+          (()=>{
+          const C=window.Capacitor;
+          if(!C||!C.isNativePlatform||!C.isNativePlatform())return;
+          const Ink=C.registerPlugin('InkOpen'),FS=C.registerPlugin('Filesystem'),SH=C.registerPlugin('Share');
+
+          // 1) PDF opened from WhatsApp / Files / share sheet
+          const bytes=s=>{const b=atob(s),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u};
+          Ink.addListener('fileOpened',async e=>{
+            try{
+              if(e.error)throw new Error(e.error);
+              const id=await imp(new File([bytes(e.data)],e.name||'file.pdf',{type:'application/pdf'}));
+              openDoc(id);
+            }catch(x){alert('تعذر فتح الملف: '+(x&&x.message||x))}
+          });
+
+          // 2) Downloads (export PDF / backup): WebView ignores blob downloads, so use the share sheet
+          const b64=blob=>new Promise((ok,no)=>{const r=new FileReader();r.onload=()=>ok(String(r.result).split(',')[1]);r.onerror=no;r.readAsDataURL(blob)});
+          const orig=HTMLAnchorElement.prototype.click;
+          HTMLAnchorElement.prototype.click=function(){
+            if(this.download&&/^blob:/.test(this.href)){
+              const name=this.download;
+              fetch(this.href).then(r=>r.blob()).then(b64).then(async data=>{
+                const f=await FS.writeFile({path:name,data,directory:'CACHE'});
+                await SH.share({title:name,url:f.uri,dialogTitle:'حفظ / مشاركة'});
+              }).catch(x=>{if(!/cancel/i.test(String(x&&x.message||x)))alert('تعذر الحفظ: '+(x&&x.message||x))});
+              return;
+            }
+            return orig.apply(this,arguments);
+          };
+          })();
+          EOF
+          mkdir -p scripts
+          cat > scripts/prepare.sh <<'EOF'
+          #!/usr/bin/env bash
+          # Copies the web app into www/, bundles pdf.js + pdf-lib locally (works offline),
+          # removes the service worker (the APK already ships the files) and injects native.js.
+          set -euo pipefail
+          rm -rf www && mkdir -p www/lib
+          cp index.html app.js extra.js style.css manifest.json icon-192.png icon-512.png www/
+          B=https://cdnjs.cloudflare.com/ajax/libs
+          curl -fsSL $B/pdf.js/3.11.174/pdf.min.js        -o www/lib/pdf.min.js
+          curl -fsSL $B/pdf.js/3.11.174/pdf.worker.min.js -o www/lib/pdf.worker.min.js
+          curl -fsSL $B/pdf-lib/1.17.1/pdf-lib.min.js     -o www/lib/pdf-lib.min.js
+          cp native/native.js www/native.js
+          cd www
+          sed -i "s#https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/#lib/#g; s#https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/#lib/#g" index.html app.js
+          sed -i "s#if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');##" app.js
+          sed -i 's#<script src="extra.js"></script>#<script src="extra.js"></script><script src="native.js"></script>#' index.html
+          grep -q 'native.js' index.html || { echo "native.js injection failed"; exit 1; }
+          grep -q 'lib/pdf.min.js' index.html || { echo "pdf.js rewrite failed"; exit 1; }
+          echo "www ready"
+          EOF
+          mkdir -p scripts
+          cat > scripts/patch_android.py <<'EOF'
+          import re, shutil, glob, os
+          root = 'android/app/src/main'
+          # 1) Java files
+          d = f'{root}/java/com/inkpad/app'
+          os.makedirs(d, exist_ok=True)
+          for f in ('MainActivity.java', 'InkOpenPlugin.java'):
+              shutil.copy(f'native/{f}', f'{d}/{f}')
+
+          # 2) "Open with" + "Share" for PDFs
+          p = f'{root}/AndroidManifest.xml'
+          s = open(p, encoding='utf-8').read()
+          filters = '''
+                      <intent-filter>
+                          <action android:name="android.intent.action.VIEW" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <category android:name="android.intent.category.BROWSABLE" />
+                          <data android:mimeType="application/pdf" />
+                      </intent-filter>
+                      <intent-filter>
+                          <action android:name="android.intent.action.SEND" />
+                          <category android:name="android.intent.category.DEFAULT" />
+                          <data android:mimeType="application/pdf" />
+                      </intent-filter>
+          '''
+          assert '</activity>' in s
+          s = s.replace('</activity>', filters + '        </activity>', 1)
+          open(p, 'w', encoding='utf-8').write(s)
+
+          # 3) App icon from icon-512.png
+          for m in glob.glob(f'{root}/res/mipmap-*'):
+              if 'anydpi' in m:
+                  shutil.rmtree(m)
+              else:
+                  for n in ('ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png'):
+                      shutil.copy('icon-512.png', f'{m}/{n}')
+          print('android patched')
+          EOF
+          mkdir -p scripts
+          cat > scripts/build.sh <<'EOF'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          bash scripts/prepare.sh
+          npx cap add android
+          python3 scripts/patch_android.py
+          npx cap sync android
+          cd android && chmod +x gradlew && ./gradlew assembleDebug
+          echo "APK: android/app/build/outputs/apk/debug/app-debug.apk"
+          EOF
+          chmod +x scripts/*.sh
+          npm install
+          bash scripts/build.sh
+
+      - name: Publish APK as a release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk InkPad.apk
+          gh release delete latest -y --cleanup-tag || true
+          gh release create latest InkPad.apk --title "InkPad APK" --notes "Latest Android build" --latest
