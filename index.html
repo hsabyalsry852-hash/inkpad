@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ar"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a"><link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png"><title>InkPad</title><link rel="stylesheet" href="style.css"></head>
 <body>
@@ -10,24 +10,36 @@
 <label class="btn p">📄 فتح PDF<input id="fp" type="file" accept="application/pdf,.pdf" hidden></label>
 <button class="btn" id="nn">📝 ملاحظة جديدة</button>
 <select id="tpl"><option value="blank">أبيض</option><option value="lines">سطور</option><option value="grid">مربعات</option><option value="dots">نقاط</option></select>
+<label class="btn">🔗 دمج PDF<input id="mgf" type="file" accept="application/pdf" multiple hidden></label><button class="btn" id="bkx">💾 نسخة احتياطية</button><label class="btn">♻️ استرجاع<input id="bki" type="file" accept=".inkbak" hidden></label>
 </div>
 <div id="list"></div>
 </section>
 <section id="ed" hidden>
-<div id="top"><button id="bk">←</button><b id="ttl"></b><button id="sq" hidden>🔍</button><button id="pn"></button><button id="ex">⬇ PDF</button></div>
+<div id="top"><button id="bk">←</button><b id="ttl"></b><button id="sq" hidden>🔍</button><button id="mn">⋯</button><button id="pb">📑</button><button id="bm">☆</button><button id="pn"></button><button id="ex">⬇ PDF</button></div>
 <div id="sb" hidden><input id="si" type="search" dir="auto" placeholder="بحث في الملف" enterkeyhint="search"><button id="sp">▲</button><button id="sn">▼</button><span id="cnt"></span><button id="sx">✕</button></div>
 <div id="sc"><div id="pgs"></div></div>
 <div id="tb">
-<button id="tp"></button><button data-t="hand">✋</button><button data-t="pen" class="on">✏️</button><button data-t="hl">🖍</button><button data-t="er">🧽</button><button data-t="tx">T</button><button data-t="sh">▭</button>
+<button id="tp"></button><button data-t="hand">✋</button><button data-t="pen" class="on">✏️</button><button data-t="hl">🖍</button><button data-t="lz">✨</button><button data-t="er">🧽</button><button data-t="tx">T</button><button data-t="mv">✥</button><button data-t="ls">⛶</button><button data-t="sh">▭</button>
 <select id="shs"><option value="line">خط</option><option value="rect">مستطيل</option><option value="ell">دائرة</option></select>
 <button id="un">↶</button><button id="re">↷</button>
 <span id="cl" style="display:contents"></span><input id="co" type="color" value="#1e40af">
 <input id="wd" type="range" min="1" max="12" value="3">
 <button id="zo">➖</button><button id="zi">➕</button><button id="ap" hidden>📄＋</button>
 </div>
-<div id="sa" hidden><button class="sw" data-h="#facc15" style="background:#facc15"></button><button class="sw" data-h="#4ade80" style="background:#4ade80"></button><button class="sw" data-h="#f472b6" style="background:#f472b6"></button><button id="cp">📋 نسخ</button></div>
+<div id="pl" hidden><div id="plh"><button data-p="pg" class="on">📄 الصفحات</button><button data-p="bm">⭐ العلامات</button><button data-p="hl">🖍 الهايلايت</button><button data-p="fc">🃏 الكروت</button><button data-p="au">🎙 التسجيلات</button><button id="plx">✕</button></div><div id="plb"></div></div>
+<div id="mm" hidden>
+<h4>✍ الكتابة</h4><button id="m-po">🖐 وضع القلم فقط: إيقاف</button><button id="m-rl">📏 مسطرة (خط مستقيم): إيقاف</button><button id="m-gs">🔲 محاذاة للشبكة: إيقاف</button><label class="btn">🖼 إضافة صورة<input id="imf" type="file" accept="image/*" hidden></label>
+<h4>📚 المذاكرة</h4><button id="m-fc">🃏 كروت المراجعة</button><button id="m-rc">🎙 تسجيل صوت</button><button id="m-tm">⏱ مؤقت مذاكرة 25 دقيقة</button><button id="m-ocr">🔎 OCR للصفحة</button>
+<h4>✨ الذكاء الاصطناعي</h4><button id="m-sm">📝 لخّص الصفحة</button><button id="m-ky">🔑 مفتاح AI</button>
+<h4>📑 الصفحات</h4><button id="m-pi">➕ صفحة فاضية بعدها</button><button id="m-pd">🗑 حذف الصفحة</button><button id="m-pu">⬆ نقل لفوق</button><button id="m-pn">⬇ نقل لتحت</button>
+<h4>👁 العرض</h4><button id="m-nt">🌙 وضع ليلي</button></div>
+<span id="tmr" hidden></span>
+<div id="lsb" hidden><button id="l-d">🗑</button><button id="l-m">➖</button><button id="l-p">➕</button><button id="l-x">✕</button></div>
+<div id="air" hidden><div id="aib"></div><div><button id="aic">📋 نسخ</button> <button id="aix">✕</button></div></div>
+<div id="sa" hidden><button class="sw" data-h="#facc15" style="background:#facc15"></button><button class="sw" data-h="#4ade80" style="background:#4ade80"></button><button class="sw" data-h="#f472b6" style="background:#f472b6"></button><button id="tr">🌐</button><button id="ai">✨ اشرح</button><button id="cp">📋 نسخ</button></div>
 </section>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="app.js"></script>
+<script src="extra.js"></script>
 </body></html>
