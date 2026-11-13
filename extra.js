@@ -80,3 +80,77 @@ $('#m-pi').onclick=()=>PM('i');$('#m-pd').onclick=()=>PM('d');$('#m-pu').onclick
 async function imp(f){const id='p'+Date.now()+Math.random().toString(36).slice(2,5),b=await f.arrayBuffer();await tx('f','readwrite',s=>s.put(b,id));await dbPut({id,n:f.name.replace(/\.pdf$/i,''),k:'pdf',s:{},u:Date.now()});return id}
 (async()=>{if(!/shared=1/.test(location.search)||!window.caches)return;const c=await caches.open('inkshare');let id;for(const r of await c.keys()){const rs=await c.match(r);id=await imp(new File([await rs.blob()],decodeURIComponent(rs.headers.get('x-name')||'file.pdf')));await c.delete(r)}history.replaceState(null,'',location.pathname);id&&openDoc(id)})();
 if('launchQueue'in window)launchQueue.setConsumer(async l=>{let id;for(const h of l.files||[])id=await imp(await h.getFile());id&&openDoc(id)});
+
+// ================= v7: focus mode / study time / review list / hide answers =================
+(()=>{
+const ED=$('#ed'),op=id=>$(id);
+// ---- focus mode (hide all bars; floating ✕ to exit) ----
+$('#m-fo').onclick=()=>{$('#mm').hidden=true;ED.classList.add('fs','fo')};
+$('#fxb').onclick=()=>ED.classList.remove('fs','fo');
+new MutationObserver(()=>{if(!ED.classList.contains('fs')&&ED.classList.contains('fo'))ED.classList.remove('fo')}).observe(ED,{attributes:true,attributeFilter:['class']});
+// ---- study time ----
+const KS='inkstudy',ld=()=>{try{return JSON.parse(localStorage.getItem(KS)||'{}')}catch(e){return{}}},
+ dk=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),
+ ft=s=>{const M=Math.round(s/60);if(!M)return s>0?'أقل من دقيقة':'0 د';const h=M/60|0,m=M%60;return h?h+' س'+(m?' '+m+' د':''):m+' د'};
+let la=Date.now(),lt=Date.now();
+['pointerdown','pointermove','scroll','keydown','touchstart'].forEach(v=>addEventListener(v,()=>la=Date.now(),{passive:true,capture:true}));
+setInterval(()=>{const n=Date.now(),dt=Math.min(n-lt,10000)/1000;lt=n;if(document.hidden||ED.hidden||n-la>300000)return;
+ const s=ld(),k=dk(new Date());s[k]=(s[k]||0)+dt;const ks=Object.keys(s).sort();ks.slice(0,Math.max(0,ks.length-400)).forEach(x=>delete s[x]);try{localStorage.setItem(KS,JSON.stringify(s))}catch(e){}},5000);
+function stR(){const s=ld(),n=new Date(),b=$('#stb');let wk=0,mx=1,m30=0;const rows=[];
+ for(let i=0;i<30;i++){const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()-i),v=s[dk(d)]||0;m30+=v;if(i<7){rows.push([d,v,i]);wk+=v;mx=Math.max(mx,v)}}
+ b.innerHTML='';const T=E('div','stt'),l=E('div','em');T.textContent=ft(s[dk(n)]||0);l.textContent='النهاردة';b.append(T,l);
+ rows.forEach(([d,v,i])=>{const r=E('div','sbr',"<span></span><div><i></i></div><span></span>"),sp=r.querySelectorAll('span');sp[0].textContent=i?d.toLocaleDateString('ar-EG',{weekday:'long'}):'النهاردة';sp[1].textContent=ft(v);r.querySelector('i').style.width=v>0?Math.max(2,Math.round(v/mx*100))+'%':'0';b.append(r)});
+ [['آخر 7 أيام',ft(wk)],['متوسط اليوم (7 أيام)',ft(wk/7)],['آخر 30 يوم',ft(m30)]].forEach(([a,c])=>{const r=E('div','stx'),x=E('span'),y=E('b');x.textContent=a;y.textContent=c;r.append(x,y);b.append(r)})}
+const stO=()=>{$('#mm').hidden=true;stR();$('#stp').hidden=false};
+$('#h-st').onclick=$('#m-st').onclick=stO;$('#stx').onclick=()=>$('#stp').hidden=true;
+// ---- review list (all starred ⭐ pages from all files) ----
+async function rvR(){const b=$('#rvb');b.innerHTML='';
+ const a=(await tx('d','readonly',s=>s.getAll())).filter(d=>(d.bm||[]).length).sort((x,y)=>y.u-x.u);
+ if(!a.length){b.append(E('p','em','مفيش صفحات متعلّم عليها. جوه أي ملف اضغط ☆ فوق عشان تضيف الصفحة للمراجعة.'));return}
+ a.forEach(d=>{const g=E('div','rg'),h=E('b');h.textContent=d.n+' ('+d.bm.length+')';g.append(h);
+  [...d.bm].sort((x,y)=>x-y).forEach(p=>{const r=E('div','rr'),t=E('span'),x=E('button');t.textContent='📄 صفحة '+(p+1);x.textContent='✓ تمت';
+   t.onclick=()=>rvGo(d.id,p);x.onclick=async()=>{await rvDone(d.id,p);rvR()};r.append(t,x);g.append(r)});b.append(g)})}
+async function rvDone(id,p){if(S.d&&S.d.id===id&&!ED.hidden){const b=S.d.bm=S.d.bm||[],x=b.indexOf(p);if(x>=0)b.splice(x,1);updBm();await flush();return}
+ const d=await tx('d','readonly',s=>s.get(id));if(!d)return;d.bm=(d.bm||[]).filter(x=>x!==p);await dbPut(d)}
+async function rvGo(id,p){$('#rv').hidden=true;if(!ED.hidden)await flush();if(!(S.d&&!ED.hidden&&S.d.id===id))await openDoc(id);
+ const el=S.pg[p];if(S.d&&!ED.hidden&&S.d.id===id&&el)el.scrollIntoView()}
+const rvO=async()=>{$('#mm').hidden=true;if(!ED.hidden)await flush();$('#rv').hidden=false;rvR()};
+$('#h-rv').onclick=$('#m-rv').onclick=rvO;$('#rvx').onclick=()=>$('#rv').hidden=true;
+// ---- hide answers (cover rectangles; tap with ✋ to reveal) ----
+const RV=new WeakSet();let RA=0;const rev=o=>RA?!RV.has(o):RV.has(o);
+const _ds=ds;ds=(c,o,k)=>{if(o.t!=='cv')return _ds(c,o,k);
+ const a=o.p[0],b=o.p[1]||a,x=Math.min(a[0],b[0])*k,y=Math.min(a[1],b[1])*k,w=Math.abs(b[0]-a[0])*k,h=Math.abs(b[1]-a[1])*k;if(w<2||h<2)return;
+ c.save();if(S.pg.some(e=>e.cur===o)){c.globalAlpha=.45;c.fillStyle=o.c;c.fillRect(x,y,w,h)}
+ else if(rev(o)){c.strokeStyle=o.c;c.lineWidth=Math.max(1.5,2*k);c.setLineDash([6*k,4*k]);c.strokeRect(x,y,w,h)}
+ else{c.fillStyle=o.c;c.fillRect(x,y,w,h);if(h>16*k&&w>16*k){c.fillStyle='#fff';c.font='bold '+Math.min(h*.6,28*k)+'px sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('؟',x+w/2,y+h/2)}}
+ c.restore()};
+const _sp=sp;sp=o=>{if(o.t!=='cv')return _sp(o);const a=o.p[0],b=o.p[1]||a,r=[];for(let u=0;u<=4;u++)for(let v=0;v<=4;v++)r.push([a[0]+(b[0]-a[0])*u/4,a[1]+(b[1]-a[1])*v/4]);return r};
+const hit=(x,y)=>{for(let i=0;i<S.pg.length;i++){const r=S.pg[i].getBoundingClientRect();if(x<r.left||x>r.right||y<r.top||y>r.bottom)continue;
+ const px=(x-r.left)/S.z,py=(y-r.top)/S.z,l=S.d.s[i]||[];
+ for(let j=l.length-1;j>=0;j--){const o=l[j];if(o.t!=='cv')continue;const a=o.p[0],b=o.p[1]||a;if(px>=Math.min(a[0],b[0])&&px<=Math.max(a[0],b[0])&&py>=Math.min(a[1],b[1])&&py<=Math.max(a[1],b[1]))return{i,o}}return null}return null};
+let t0=null;const SC=$('#sc');
+SC.addEventListener('pointerdown',e=>{t0=e.isPrimary&&S.t==='hand'?{x:e.clientX,y:e.clientY,t:Date.now()}:null},true);
+SC.addEventListener('pointerup',e=>{const q=t0;t0=null;if(!q||!S.d||S.pd||getSelection().toString())return;if(Math.hypot(e.clientX-q.x,e.clientY-q.y)>=10||Date.now()-q.t>=400)return;
+ const h=hit(e.clientX,e.clientY);if(!h)return;e.stopImmediatePropagation();RV.has(h.o)?RV.delete(h.o):RV.add(h.o);ink(h.i)},true);
+$('#m-cv').onclick=()=>{$('#mm').hidden=true;S.sh='cv';$('#shs').value='cv';S.t='sh';sync()};
+const rl=()=>{const b=$('#m-ra');b.textContent='👁 إظهار كل الإجابات: '+(RA?'شغال':'إيقاف');b.classList.toggle('on',!!RA)};
+$('#m-ra').onclick=()=>{RA=RA?0:1;rl();S.pg.forEach(e=>e.ink.width>1&&ink(e.i))};
+const _od=openDoc;openDoc=id=>{RA=0;rl();return _od(id)};
+})();
+
+// ================= v8: organized toolbar (popovers) =================
+(()=>{
+const ED=$('#ed'),TB=$('#tb'),PM=$('#pm'),PC=$('#pc2'),MB=$('#tmb'),CB=$('#tcb'),MI={lz:'✨',tx:'T',mv:'✥',ls:'⛶',sh:'▭'};
+const shut=()=>{PM.hidden=PC.hidden=true;MB.classList.remove('open');CB.classList.remove('open')};
+const place=p=>{const r=TB.getBoundingClientRect();p.style.cssText='';
+ if(ED.classList.contains('L')){p.style.left=r.right+6+'px';p.style.top=Math.max(8,r.top)+'px';p.style.maxHeight=innerHeight-Math.max(8,r.top)-8+'px'}
+ else{p.style.bottom=innerHeight-r.top+6+'px';p.style.left='8px';p.style.right='8px'}};
+const tog=(p,b)=>{const o=p.hidden;shut();if(o){p.hidden=false;b.classList.add('open');place(p)}};
+MB.onclick=()=>tog(PM,MB);CB.onclick=()=>tog(PC,CB);
+addEventListener('pointerdown',e=>{if(!e.target.closest('.pop,#tmb,#tcb'))shut()},true);
+PM.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',shut));$('#shs').addEventListener('change',shut);
+$('#tp').addEventListener('click',()=>setTimeout(()=>place(PM),0));
+const upd=()=>{const i=MI[S.t];MB.textContent=i||'🧰';MB.classList.toggle('on',!!i);$('#dot').style.background=S.c;$('#pv').style.background=S.c;$('#pv').style.height=Math.max(2,S.w*1.5)+'px'};
+const _sy2=sync;sync=()=>{_sy2();upd()};const _pc=pc;pc=()=>{_pc();upd()};
+$('#wd').addEventListener('input',upd);$('#co').addEventListener('input',upd);upd();
+})();
