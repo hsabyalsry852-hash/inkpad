@@ -25,14 +25,14 @@ tg('#m-rl','rl','📏 مسطرة (خط مستقيم)');tg('#m-gs','gs','🔲 م�
 const KEY=()=>{try{return localStorage.getItem('inkkey')||''}catch(e){return''}};
 const showAI=t=>{$('#aib').textContent=t;$('#air').hidden=false};
 $('#aix').onclick=()=>$('#air').hidden=true;$('#aic').onclick=()=>navigator.clipboard.writeText($('#aib').textContent);
-async function ai(p){let k=KEY();if(!k){k=(prompt('الصق مفتاح Anthropic API (بيتخزن على جهازك بس):')||'').trim();if(!k)return null;try{localStorage.setItem('inkkey',k)}catch(e){}}
+async function ai(p){let k=KEY();if(!k){k=((await inkAsk('الصق مفتاح Anthropic API (بيتخزن على جهازك بس):'))||'').trim();if(!k)return null;try{localStorage.setItem('inkkey',k)}catch(e){}}
  const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-5-5',max_tokens:1500,system:'أنت مساعد مذاكرة لطالب علاج طبيعي. أجب بالعربية المصرية المبسطة وخلّي المصطلحات الطبية بالإنجليزية. كن مختصرًا.',messages:[{role:'user',content:p}]})});
  const j=await r.json();if(!r.ok)throw Error(j.error&&j.error.message||r.status);return j.content.map(c=>c.text||'').join('')}
 $('#ai').onclick=async()=>{const s=hs();if(!s)return;const t=s.toString();if(!KEY())return open('https://claude.ai/new?q='+encodeURIComponent('اشرح لي بشكل مبسط:\n'+t),'_blank');
  showAI('⏳ …');try{showAI(await ai('اشرح بشكل مبسط:\n'+t))}catch(e){showAI('خطأ: '+e.message)}};
 $('#m-sm').onclick=async()=>{$('#mm').hidden=true;if(!S.pdf)return alert('التلخيص للـPDF بس');const T=await ptxt(S.cp||0),t=T.it.map(x=>x.str).join(' ').trim();if(!t)return alert('الصفحة مفيهاش نص. جرّب OCR الأول');
  showAI('⏳ …');try{const r=await ai('لخّص النص ده في نقاط قصيرة:\n'+t.slice(0,12000));r?showAI(r):$('#air').hidden=true}catch(e){showAI('خطأ: '+e.message)}};
-$('#m-ky').onclick=()=>{const k=prompt('مفتاح Anthropic API (فاضي = مسح):',KEY());if(k===null)return;try{localStorage.setItem('inkkey',k.trim())}catch(e){}};
+$('#m-ky').onclick=async()=>{const k=await inkAsk('مفتاح Anthropic API (فاضي = مسح):',KEY());if(k===null)return;try{localStorage.setItem('inkkey',k.trim())}catch(e){}};
 // ---- flashcards ----
 const cz=t=>{const w=t.split(/\s+/).filter(x=>x.length>3).sort((a,b)=>b.length-a.length)[0];return w?t.replace(w,'＿＿＿＿'):t};
 const hls=()=>{const L=[];S.pg.forEach((_,i)=>(S.d.s[i]||[]).forEach(o=>o.t==='hr'&&o.tx&&o.tx.trim().length>8&&L.push([i,o.tx.trim()])));return L};
@@ -48,7 +48,7 @@ const _pl=plR;plR=function(){if(tab!=='fc'&&tab!=='au')return _pl();const b=$('#
  if(!(S.d.au||[]).length){const p=E('p');p.textContent='مفيش تسجيلات. ابدأ من ⋯ ← 🎙 تسجيل صوت.';b.append(p)}
  (S.d.au||[]).forEach((r,j)=>{const d=E('div','hi','<b></b> <button>▶</button> <button>🗑</button>');d.querySelector('b').textContent='ص '+(r.pg+1)+' · '+new Date(r.t).toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});const[p,x]=d.querySelectorAll('button');
   p.onclick=async()=>{const f=await tx('f','readonly',s=>s.get(r.k));cur&&cur.pause();cur=new Audio(URL.createObjectURL(new Blob([f],{type:r.m})));cur.play()};
-  x.onclick=async()=>{if(!confirm('حذف التسجيل؟'))return;await tx('f','readwrite',s=>s.delete(r.k));S.d.au.splice(j,1);save();plR()};b.append(d)})};
+  x.onclick=async()=>{if(!await inkConfirm('حذف التسجيل؟'))return;await tx('f','readwrite',s=>s.delete(r.k));S.d.au.splice(j,1);save();plR()};b.append(d)})};
 // ---- audio recording ----
 let MR=null,CH=[];$('#m-rc').onclick=async()=>{const b=$('#m-rc');if(MR){MR.stop();return}
  try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),pg=S.cp||0;MR=new MediaRecorder(st);CH=[];MR.ondataavailable=e=>CH.push(e.data);
@@ -66,7 +66,7 @@ $('#m-ocr').onclick=async()=>{if(!S.pdf)return alert('OCR للـPDF بس');const
   S.tc[i]=null;el.tl&&(el.tl.remove(),el.tl=null);buildTl(i);save();alert('تم. جرّب البحث أو تحديد النص في الصفحة دي')}catch(e){alert('فشل OCR: '+e.message)}b.disabled=false;b.textContent='🔎 OCR للصفحة'};
 // ---- page tools (insert / delete / move) ----
 async function PM(a){const d=S.d,n=S.pg.length,c=S.cp||0;let o=[...Array(n).keys()],np=c;
- if(a==='i'){o.splice(c+1,0,null);np=c+1}else if(a==='d'){if(n<2)return alert('لازم تفضل صفحة واحدة');if(!confirm('حذف صفحة '+(c+1)+'؟'))return;o.splice(c,1);np=Math.min(c,o.length-1)}
+ if(a==='i'){o.splice(c+1,0,null);np=c+1}else if(a==='d'){if(n<2)return alert('لازم تفضل صفحة واحدة');if(!await inkConfirm('حذف صفحة '+(c+1)+'؟'))return;o.splice(c,1);np=Math.min(c,o.length-1)}
  else{const j=c+(a==='u'?-1:1);if(j<0||j>=n)return;[o[c],o[j]]=[o[j],o[c]];np=j}
  $('#mm').hidden=true;await flush();
  try{if(d.k==='pdf'){const D=await PDFLib.PDFDocument.load(await tx('f','readonly',s=>s.get(d.id))),N=await PDFLib.PDFDocument.create();
@@ -140,7 +140,7 @@ const _od=openDoc;openDoc=id=>{RA=0;rl();return _od(id)};
 
 // ================= v8: organized toolbar (popovers) =================
 (()=>{
-const ED=$('#ed'),TB=$('#tb'),PM=$('#pm'),PC=$('#pc2'),MB=$('#tmb'),CB=$('#tcb'),MI={lz:'✨',tx:'T',mv:'✥',ls:'⛶',sh:'▭'};
+const ED=$('#ed'),TB=$('#tb'),PM=$('#pm'),PC=$('#pc2'),MB=$('#tmb'),CB=$('#tcb'),MI={lz:1,tx:1,mv:1,ls:1,sh:1},IK={bag:'<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/>',lz:'<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/>',tx:'<path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/>',mv:'<path d="m5 9-3 3 3 3"/><path d="m9 5 3-3 3 3"/><path d="m15 19-3 3-3-3"/><path d="m19 9 3 3-3 3"/><path d="M2 12h20"/><path d="M12 2v20"/>',ls:'<path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/>',sh:'<path d="M8.3 10a.7.7 0 0 1-.6-1.1L11.4 3a.7.7 0 0 1 1.2 0L16.3 9a.7.7 0 0 1-.6 1z"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/>'};
 const shut=()=>{PM.hidden=PC.hidden=true;MB.classList.remove('open');CB.classList.remove('open')};
 const place=p=>{const r=TB.getBoundingClientRect();p.style.cssText='';
  if(ED.classList.contains('L')){p.style.left=r.right+6+'px';p.style.top=Math.max(8,r.top)+'px';p.style.maxHeight=innerHeight-Math.max(8,r.top)-8+'px'}
@@ -150,7 +150,7 @@ MB.onclick=()=>tog(PM,MB);CB.onclick=()=>tog(PC,CB);
 addEventListener('pointerdown',e=>{if(!e.target.closest('.pop,#tmb,#tcb'))shut()},true);
 PM.querySelectorAll('[data-t]').forEach(b=>b.addEventListener('click',shut));$('#shs').addEventListener('change',shut);
 $('#tp').addEventListener('click',()=>setTimeout(()=>place(PM),0));
-const upd=()=>{const i=MI[S.t];MB.textContent=i||'🧰';MB.classList.toggle('on',!!i);$('#dot').style.background=S.c;$('#pv').style.background=S.c;$('#pv').style.height=Math.max(2,S.w*1.5)+'px'};
+const upd=()=>{const i=MI[S.t];MB.innerHTML='<svg class="i" viewBox="0 0 24 24">'+IK[i?S.t:'bag']+'</svg>';MB.classList.toggle('on',!!i);$('#dot').style.background=S.c;$('#pv').style.background=S.c;$('#pv').style.height=Math.max(2,S.w*1.5)+'px'};
 const _sy2=sync;sync=()=>{_sy2();upd()};const _pc=pc;pc=()=>{_pc();upd()};
 $('#wd').addEventListener('input',upd);$('#co').addEventListener('input',upd);upd();
 })();
@@ -220,3 +220,15 @@ sc.addEventListener('touchcancel',()=>{g=null},{passive:true});
 
 // الطبقة النصية (تحديد النص) بتتبني بس في وضع اليد 🖐
 {const _s3=sync;sync=()=>{_s3();if(S.t==='hand'&&S.pg)S.pg.forEach(el=>{if(el&&el.r&&!el.tl&&nearEl(el,600))buildTl(el.i)})}}
+
+
+// ---- v9: theme switch (dark / light) ----
+(()=>{const q=s=>document.querySelector(s),R=document.documentElement,K='inktheme';
+const get=()=>{try{return localStorage.getItem(K)||'dark'}catch(e){return'dark'}};
+const apply=t=>{if(t==='light')R.setAttribute('data-theme','light');else R.removeAttribute('data-theme');
+ const m=q('meta[name=theme-color]');m&&m.setAttribute('content',t==='light'?'#ffffff':'#0b1120');
+ const b=q('#m-th');b&&(b.textContent='🎨 المظهر: '+(t==='light'?'فاتح':'داكن'))};
+apply(get());
+const b=q('#m-th');b&&b.addEventListener('click',()=>{const t=get()==='light'?'dark':'light';try{localStorage.setItem(K,t)}catch(e){}apply(t)});
+})();
+

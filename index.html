@@ -1,34 +1,42 @@
 <!doctype html>
 <html lang="ar"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#0f172a"><link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b1120"><link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png"><title>InkPad</title><link rel="stylesheet" href="style.css"></head>
 <body>
 <section id="home">
-<h1>InkPad</h1>
-<div class="acts">
-<label class="btn p">📄 فتح PDF<input id="fp" type="file" accept="application/pdf,.pdf" hidden></label>
-<button class="btn" id="nn">📝 ملاحظة جديدة</button>
-<select id="tpl"><option value="blank">أبيض</option><option value="lines">سطور</option><option value="grid">مربعات</option><option value="dots">نقاط</option></select>
-<label class="btn">🔗 دمج PDF<input id="mgf" type="file" accept="application/pdf" multiple hidden></label><button class="btn" id="h-rv">⭐ المراجعة</button><button class="btn" id="h-st">📊 وقت المذاكرة</button><button class="btn" id="bkx">💾 نسخة احتياطية</button><label class="btn">♻️ استرجاع<input id="bki" type="file" accept=".inkbak" hidden></label>
-</div>
+<div id="hhd"><img src="icon-192.png" alt="" width="44" height="44"><div><h1>InkPad</h1><small id="hsub"></small></div></div>
+<div id="htabs"><button data-hp="0" class="on">📂 ملفاتي</button><button data-hp="1">🧰 الأدوات</button></div>
+<div id="hpg">
+<div class="hp" id="hp0">
+<label class="btn p big">📄 فتح PDF<input id="fp" type="file" accept="application/pdf,.pdf" hidden></label>
 <div id="list"></div>
+</div>
+<div class="hp" id="hp1">
+<div class="trow"><button class="btn tb1" id="nn">📝 ملاحظة جديدة</button><select id="tpl"><option value="blank">أبيض</option><option value="lines">سطور</option><option value="grid">مربعات</option><option value="dots">نقاط</option></select></div>
+<label class="btn tb1">🔗 دمج PDF<input id="mgf" type="file" accept="application/pdf" multiple hidden></label>
+<button class="btn tb1" id="h-rv">⭐ المراجعة</button>
+<button class="btn tb1" id="h-st">📊 وقت المذاكرة</button>
+<button class="btn tb1" id="bkx">💾 نسخة احتياطية</button>
+<label class="btn tb1">♻️ استرجاع<input id="bki" type="file" accept=".inkbak" hidden></label>
+</div>
+</div>
 </section>
 <section id="ed" hidden>
-<div id="top"><button id="bk">←</button><b id="ttl"></b><button id="sq" hidden>🔍</button><button id="mn">⋯</button><button id="pb">📑</button><button id="bm">☆</button><button id="pn"></button><button id="ex">⬇ PDF</button></div>
+<div id="top"><button id="bk" aria-label="رجوع"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button><b id="ttl"></b><button id="sq" hidden aria-label="بحث"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button><button id="mn" aria-label="الحقيبة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg></button><button id="pb" aria-label="الصفحات"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg></button><button id="bm" aria-label="علامة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg></button><button id="pn"></button><button id="ex">⬇ PDF</button></div>
 <div id="sb" hidden><input id="si" type="search" dir="auto" placeholder="بحث في الملف" enterkeyhint="search"><button id="sp">▲</button><button id="sn">▼</button><span id="cnt"></span><button id="sx">✕</button></div>
 <div id="sc"><div id="pgs"></div></div>
 <div id="tb">
-<button data-t="hand">✋</button><button data-t="pen" class="on">✏️</button><button data-t="hl">🖍</button><button data-t="er">🧽</button><i class="sep"></i>
-<button id="tmb">🧰</button><i class="sep"></i>
-<button id="un">↶</button><button id="re">↷</button><i class="sep"></i>
+<button data-t="hand"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/></svg></button><button data-t="pen" class="on"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.4 3.6a2.1 2.1 0 0 1 3 3L7.4 18.6a2 2 0 0 1-.9.5l-2.9.8a.5.5 0 0 1-.6-.6l.8-2.9a2 2 0 0 1 .5-.9z"/></svg></button><button data-t="hl"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></button><button data-t="er"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg></button><i class="sep"></i>
+<button id="tmb" aria-label="الحقيبة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></button><i class="sep"></i>
+<button id="un" aria-label="تراجع"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button id="re" aria-label="إعادة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button><i class="sep"></i>
 <button id="tcb"><i id="dot"></i></button><button id="ap" hidden>📄＋</button>
 </div>
 <div id="pm" class="pop" hidden>
 <h5>أدوات إضافية</h5>
-<div class="pg3"><button data-t="lz">✨ ليزر</button><button data-t="tx">T نص</button><button data-t="mv">✥ تحريك</button><button data-t="ls">⛶ تحديد</button><button data-t="sh">▭ شكل</button>
+<div class="pg3"><button data-t="lz"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg><span>ليزر</span></button><button data-t="tx"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg><span>نص</span></button><button data-t="mv"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 9-3 3 3 3"/><path d="m9 5 3-3 3 3"/><path d="m15 19-3 3-3-3"/><path d="m19 9 3 3-3 3"/><path d="M2 12h20"/><path d="M12 2v20"/></svg><span>تحريك</span></button><button data-t="ls"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3a2 2 0 0 0-2 2"/><path d="M19 3a2 2 0 0 1 2 2"/><path d="M21 19a2 2 0 0 1-2 2"/><path d="M5 21a2 2 0 0 1-2-2"/><path d="M9 3h1"/><path d="M9 21h1"/><path d="M14 3h1"/><path d="M14 21h1"/><path d="M3 9v1"/><path d="M21 9v1"/><path d="M3 14v1"/><path d="M21 14v1"/></svg><span>تحديد</span></button><button data-t="sh"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.3 10a.7.7 0 0 1-.6-1.1L11.4 3a.7.7 0 0 1 1.2 0L16.3 9a.7.7 0 0 1-.6 1z"/><rect x="3" y="14" width="7" height="7" rx="1"/><circle cx="17.5" cy="17.5" r="3.5"/></svg><span>شكل</span></button>
 <select id="shs"><option value="line">خط</option><option value="rect">مستطيل</option><option value="ell">دائرة</option><option value="cv">إخفاء إجابة</option></select></div>
-<h5>التكبير</h5><div class="row" style="direction:ltr"><button id="zo">➖</button><button id="zi">➕</button></div>
+<h5>التكبير</h5><div class="row" style="direction:ltr"><button id="zo" aria-label="تصغير"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/></svg></button><button id="zi" aria-label="تكبير"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/><path d="M11 8v6"/></svg></button></div>
 <h5>مكان الشريط (أسفل / جنب)</h5><div class="row"><button id="tp"></button></div>
 </div>
 <div id="pc2" class="pop" hidden>
@@ -41,7 +49,7 @@
 <h4>📚 المذاكرة</h4><button id="m-fc">🃏 كروت المراجعة</button><button id="m-rc">🎙 تسجيل صوت</button><button id="m-tm">⏱ مؤقت مذاكرة 25 دقيقة</button><button id="m-ocr">🔎 OCR للصفحة</button><button id="m-fo">🎯 وضع التركيز</button><button id="m-cv">🙈 إخفاء إجابة (ارسم مستطيل)</button><button id="m-ra">👁 إظهار كل الإجابات: إيقاف</button><button id="m-rv">⭐ قائمة المراجعة</button><button id="m-st">📊 وقت المذاكرة</button>
 <h4>✨ الذكاء الاصطناعي</h4><button id="m-sm">📝 لخّص الصفحة</button><button id="m-ky">🔑 مفتاح AI</button>
 <h4>📑 الصفحات</h4><button id="m-pi">➕ صفحة فاضية بعدها</button><button id="m-pd">🗑 حذف الصفحة</button><button id="m-pu">⬆ نقل لفوق</button><button id="m-pn">⬇ نقل لتحت</button>
-<h4>👁 العرض</h4><button id="m-nt">🌙 وضع ليلي</button></div>
+<h4>👁 العرض</h4><button id="m-nt">🌙 وضع ليلي للـPDF</button><button id="m-th">🎨 المظهر: داكن</button></div>
 <span id="tmr" hidden></span>
 <button id="fxb">✕ إنهاء التركيز</button>
 <div id="lsb" hidden><button id="l-d">🗑</button><button id="l-m">➖</button><button id="l-p">➕</button><button id="l-x">✕</button></div>
@@ -52,6 +60,32 @@
 <div id="stp" class="ov" hidden><div class="ph"><b>📊 وقت المذاكرة</b><button id="stx">✕</button></div><div id="stb" class="ob"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script>
+(()=>{const Q=[];let cur=null;
+const pump=()=>{if(cur||!Q.length)return;const q=cur=Q.shift(),o=q.o;
+ const w=document.createElement('div');w.className='dlg';
+ w.innerHTML='<div class="dbox" role="dialog" aria-modal="true"><p></p>'+(o.input?'<input type="text" dir="auto" enterkeyhint="done" autocomplete="off">':'')+'<div class="dbt">'+(o.input||o.cancel?'<button class="dc">إلغاء</button>':'')+'<button class="do'+(o.danger?' danger':'')+'">'+(o.danger?'حذف':'موافق')+'</button></div></div>';
+ w.querySelector('p').textContent=q.m;const inp=w.querySelector('input');if(inp)inp.value=o.def||'';
+ const close=v=>{if(cur!==q)return;document.removeEventListener('keydown',kd,true);w.remove();cur=null;q.r(v);pump()};
+ const ok=()=>close(o.input?inp.value:true),no=()=>close(o.input?null:o.cancel?false:true);
+ const kd=e=>{if(e.key==='Escape'){e.preventDefault();no()}else if(e.key==='Enter'&&(inp||e.target.tagName!=='BUTTON')){e.preventDefault();ok()}};
+ w.querySelector('.do').onclick=ok;const c=w.querySelector('.dc');c&&(c.onclick=no);
+ w.addEventListener('pointerdown',e=>{if(e.target===w)no()});
+ document.addEventListener('keydown',kd,true);document.body.append(w);
+ setTimeout(()=>{inp?(inp.focus(),inp.select()):w.querySelector('.do').focus()},60)};
+const dlg=(m,o={})=>new Promise(r=>{Q.push({m:String(m),o,r});pump()});
+window.inkAsk=(m,d)=>dlg(m,{input:1,def:d==null?'':d});
+window.inkConfirm=m=>dlg(m,{cancel:1,danger:/^حذف/.test(String(m))});
+window.alert=m=>{dlg(m)};
+})();
+</script>
 <script src="app.js"></script>
 <script src="extra.js"></script>
+<script>// ---- v10: home pages tabs ----
+(()=>{const g=document.getElementById('hpg'),T=[...document.querySelectorAll('#htabs [data-hp]')],P=[document.getElementById('hp0'),document.getElementById('hp1')];
+if(!g)return;
+const mark=i=>T.forEach((b,k)=>b.classList.toggle('on',k===i));
+T.forEach((b,k)=>b.addEventListener('click',()=>{mark(k);P[k].scrollIntoView({behavior:'smooth',inline:'start',block:'nearest'})}));
+let t=0;g.addEventListener('scroll',()=>{clearTimeout(t);t=setTimeout(()=>mark(Math.round(Math.abs(g.scrollLeft)/(g.clientWidth||1))),60)},{passive:true});
+})();</script>
 </body></html>
