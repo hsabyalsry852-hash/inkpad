@@ -184,3 +184,36 @@ addEventListener('popstate',()=>{
  if(pops.length){pops.forEach(p=>p.hidden=true);try{history.pushState({ink:1},'')}catch(e){}return}
  const ed=document.getElementById('ed');if(ed&&!ed.hidden)obk.call(bk)});
 })();
+
+// ---- التنقل بين آخر ملفات PDF فتحتها بالسحب يمين/شمال ----
+(()=>{
+const K='inkstrip',get=()=>{try{const a=JSON.parse(localStorage.getItem(K)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}},put=a=>{try{localStorage.setItem(K,JSON.stringify(a.slice(-15)))}catch(e){}};
+let tt=0;const toast=m=>{let t=document.getElementById('inktoast');if(!t){t=document.createElement('div');t.id='inktoast';document.body.append(t)}t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{t.hidden=true},1600)};
+const od=window.openDoc;
+window.openDoc=async function(id){const r=await od.apply(this,arguments);try{if(S.d&&S.d.id===id&&S.d.k==='pdf'&&!document.getElementById('ed').hidden){const a=get();if(!a.includes(id)){a.push(id);put(a)}}}catch(e){}return r};
+let busy=0;
+async function go(dir){if(busy||!S.d)return;busy=1;
+ try{const a=get(),i=a.indexOf(S.d.id);if(i<0){toast('افتح ملفين PDF على الأقل عشان تتنقل بينهم');return}
+  let j=i+dir,tg=null;
+  while(j>=0&&j<a.length){const d=await tx('d','readonly',s=>s.get(a[j]));if(d&&d.k==='pdf'){tg=d;break}a.splice(j,1);if(dir<0)j--}
+  put(a);
+  if(!tg){toast(dir<0?'مفيش ملف قبل ده':'ده آخر ملف فتحته');return}
+  const n=a.indexOf(tg.id)+1;
+  await flush();try{S.pdf&&S.pdf.destroy&&S.pdf.destroy()}catch(e){}clearHl();
+  await window.openDoc(tg.id);toast('📄 '+tg.n+'  ('+n+'/'+a.length+')')
+ }finally{busy=0}}
+const sc=document.getElementById('sc');let g=null;
+const mid=e=>{const t=[...e.touches];return[t.reduce((s,q)=>s+q.clientX,0)/t.length,t.reduce((s,q)=>s+q.clientY,0)/t.length,t.length>1?Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY):0]};
+sc.addEventListener('touchstart',e=>{
+ if(document.getElementById('plc')){g=null;return}
+ const n=e.touches.length;
+ if(n===2){const m=mid(e);g={two:1,x:m[0],y:m[1],d:m[2],lx:m[0],ly:m[1],ld:m[2],t:Date.now()}}
+ else if(n===1&&S.t==='hand'&&sc.scrollWidth<=sc.clientWidth+2){const m=mid(e);g={two:0,x:m[0],y:m[1],d:0,lx:m[0],ly:m[1],ld:0,t:Date.now()}}
+ else if(n>2)g=null;
+},{passive:true});
+sc.addEventListener('touchmove',e=>{if(!g)return;if(e.touches.length!==(g.two?2:1)){return}const m=mid(e);g.lx=m[0];g.ly=m[1];g.ld=m[2]},{passive:true});
+sc.addEventListener('touchend',e=>{if(!g)return;if(g.two?e.touches.length>=2:e.touches.length>=1)return;
+ const h=g;g=null;const dx=h.lx-h.x,dy=h.ly-h.y,ok=Math.abs(dx)>90&&Math.abs(dx)>2*Math.abs(dy)&&Date.now()-h.t<1200&&(!h.two||!h.d||Math.abs(h.ld/h.d-1)<.15);
+ if(ok)go(dx>0?-1:1)},{passive:true});
+sc.addEventListener('touchcancel',()=>{g=null},{passive:true});
+})();

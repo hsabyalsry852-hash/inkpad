@@ -241,8 +241,23 @@ function snap(o){const a=o.p[0],b=o.p[o.p.length-1],xs=o.p.map(q=>q[0]),ys=o.p.m
 const IM={};function im(s){let i=IM[s];if(!i){i=IM[s]=new Image();i.onload=()=>S.pg.forEach(e=>e.ink.width>1&&ink(e.i));i.src=s}return i}
 $('#imf').onchange=async e=>{const f=e.target.files[0];e.target.value='';$('#mm').hidden=true;if(!f)return;const i=new Image();await new Promise(r=>{i.onload=r;i.src=URL.createObjectURL(f)});
  const m=Math.min(1,1000/Math.max(i.naturalWidth,i.naturalHeight)),c=E('canvas');c.width=i.naturalWidth*m;c.height=i.naturalHeight*m;c.getContext('2d').drawImage(i,0,0,c.width,c.height);
- const pi=S.cp||0,el=S.pg[pi],w=el.dim[0]*.5,y=Math.max(10,($('#sc').getBoundingClientRect().top-el.getBoundingClientRect().top)/S.z+60);
- add(pi,{t:'im',src:c.toDataURL('image/jpeg',.82),p:[[el.dim[0]*.25,y]],w,h:w*c.height/c.width});S.t='mv';sync()};
+ placeImg(c.toDataURL('image/jpeg',.82),c.height/c.width)};
+// وضع تحديد مكان الصورة: اسحبها لأي مكان، كبّر/صغّر من الركن، وبعدين اضغط تثبيت
+function placeImg(src,ar){const old=$('#plc');if(old)old.remove();const sc=$('#sc').getBoundingClientRect(),el0=S.pg[S.cp||0]||S.pg[0];
+ let w=Math.min(sc.width*.7,(el0?el0.dim[0]*.5*S.z:200)),x=sc.left+(sc.width-w)/2,y=sc.top+(sc.height-w*ar)/2;
+ const b=E('div','',`<img draggable="false"><i class="rz"></i><div class="pht">اسحب الصورة لمكانها · كبّر من الركن ↘ · اسحب برّه الصورة عشان تنزّل الصفحة</div><div class="pb"><button class="p ok">✓ تثبيت هنا</button><button class="no">✕ إلغاء</button></div>`);
+ b.id='plc';b.querySelector('img').src=src;
+ const put=()=>{b.style.left=x+'px';b.style.top=y+'px';b.style.width=w+'px';b.style.height=w*ar+'px'};put();document.body.append(b);
+ let g=null;
+ b.onpointerdown=e=>{if(e.target.closest('.pb'))return;e.preventDefault();b.setPointerCapture(e.pointerId);g={r:e.target.classList.contains('rz'),x:e.clientX,y:e.clientY,ox:x,oy:y,ow:w}};
+ b.onpointermove=e=>{if(!g)return;const dx=e.clientX-g.x,dy=e.clientY-g.y;if(g.r)w=Math.max(40,g.ow+dx);else{x=g.ox+dx;y=g.oy+dy}put()};
+ b.onpointerup=b.onpointercancel=()=>{g=null};
+ b.querySelector('.no').onclick=()=>b.remove();
+ b.querySelector('.ok').onclick=()=>{const r=b.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  const pi=S.pg.findIndex(el=>{const q=el.getBoundingClientRect();return cx>=q.left&&cx<=q.right&&cy>=q.top&&cy<=q.bottom});
+  if(pi<0){alert('حرّك الصورة فوق صفحة الأول');return}
+  const q=S.pg[pi].getBoundingClientRect();b.remove();
+  add(pi,{t:'im',src,p:[[(r.left-q.left)/S.z,(r.top-q.top)/S.z]],w:r.width/S.z,h:r.height/S.z});S.t='mv';sync()}}
 $('#mn').onclick=()=>$('#mm').hidden=!$('#mm').hidden;
 $('#m-po').onclick=()=>{S.po=!S.po;$('#m-po').textContent='🖐 وضع القلم فقط: '+(S.po?'شغال':'إيقاف');$('#m-po').classList.toggle('on',S.po)};
 $('#m-nt').onclick=()=>{S.d.nt=!S.d.nt;$('#ed').classList.toggle('nt',S.d.nt);save()};
@@ -251,8 +266,21 @@ let tmI=0;$('#m-tm').onclick=()=>{$('#mm').hidden=true;const t=$('#tmr');if(tmI)
 $('#tmr').onclick=()=>$('#m-tm').click();
 $('#tr').onclick=()=>{const s=hs();s&&open('https://translate.google.com/?sl=auto&tl=ar&op=translate&text='+encodeURIComponent(s.toString()),'_blank')};
 $('#ai').onclick=()=>{const s=hs();s&&open('https://claude.ai/new?q='+encodeURIComponent('اشرح لي بشكل مبسط:\n'+s.toString()),'_blank')};
-$('#mgf').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(fs.length<2)return alert('اختار ملفين PDF على الأقل');
- try{const D=await PDFLib.PDFDocument.create();for(const f of fs){const s=await PDFLib.PDFDocument.load(await f.arrayBuffer());(await D.copyPages(s,s.getPageIndices())).forEach(p=>D.addPage(p))}
-  const by=await D.save(),id='p'+Date.now();await tx('f','readwrite',s=>s.put(by.buffer.slice(by.byteOffset,by.byteOffset+by.byteLength),id));await dbPut({id,n:'مدمج '+new Date().toLocaleDateString('ar-EG'),k:'pdf',s:{},u:Date.now()});openDoc(id)}catch(x){alert('فشل الدمج (ممكن ملف محمي بباسورد)')}};
+$('#mgf').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(fs.length<2)return alert('اختار ملفين PDF على الأقل');mergeUI(fs)};
+// شاشة ترتيب الملفات قبل الدمج
+function mergeUI(fs){const old=$('#mgo');if(old)old.remove();let L=fs.slice();
+ const o=E('div','ov','<div class="ph"><b>🔗 ترتيب الملفات قبل الدمج</b><button class="x">✕</button></div><div class="ob"><div class="mh">الأول فوق والأخير تحت. رتّبهم بـ ⬆ ⬇ وبعدين دمج.</div><div class="ml"></div><label class="btn ad">➕ ملفات تانية<input type="file" accept="application/pdf" multiple hidden></label><input class="mn" placeholder="اسم الملف المدمج (اختياري)"></div><div class="mf"><button class="btn p go">🔗 دمج</button></div>');
+ o.id='mgo';const ml=o.querySelector('.ml'),go=o.querySelector('.go');
+ const draw=()=>{ml.innerHTML='';L.forEach((f,i)=>{const r=E('div','mr','<span class="mi"></span><b></b><small></small><button class="u">⬆</button><button class="d">⬇</button><button class="r">✕</button>');
+  r.querySelector('.mi').textContent=i+1;r.querySelector('b').textContent=f.name.replace(/\.pdf$/i,'');r.querySelector('small').textContent=fmt(f.size);
+  const u=r.querySelector('.u'),d=r.querySelector('.d');u.disabled=i===0;d.disabled=i===L.length-1;
+  u.onclick=()=>{[L[i-1],L[i]]=[L[i],L[i-1]];draw()};d.onclick=()=>{[L[i+1],L[i]]=[L[i],L[i+1]];draw()};
+  r.querySelector('.r').onclick=()=>{L.splice(i,1);draw()};ml.append(r)});go.disabled=L.length<2;go.textContent='🔗 دمج ('+L.length+' ملفات)'};
+ draw();document.body.append(o);
+ o.querySelector('.x').onclick=()=>o.remove();
+ o.querySelector('.ad input').onchange=e=>{L.push(...e.target.files);e.target.value='';draw()};
+ go.onclick=async()=>{const nm=o.querySelector('.mn').value.trim()||('مدمج '+new Date().toLocaleDateString('ar-EG')),fl=L.slice();o.remove();window.inkBusy&&inkBusy(true,'جاري الدمج…');
+  try{const D=await PDFLib.PDFDocument.create();for(const f of fl){const s=await PDFLib.PDFDocument.load(await f.arrayBuffer());(await D.copyPages(s,s.getPageIndices())).forEach(p=>D.addPage(p))}
+   const by=await D.save(),id='p'+Date.now();await tx('f','readwrite',s=>s.put(by.buffer.slice(by.byteOffset,by.byteOffset+by.byteLength),id));await dbPut({id,n:nm,k:'pdf',s:{},u:Date.now()});window.inkBusy&&inkBusy(false);openDoc(id)}catch(x){window.inkBusy&&inkBusy(false);alert('فشل الدمج (ممكن ملف محمي بباسورد)')}}}
 function lib(l,a){if(!$('#ls')){const i=E('input');i.id='ls';i.type='search';i.placeholder='🔍 ابحث في ملفاتك';i.oninput=home;l.before(i);const so=E('select');so.id='so';[['u','الأحدث'],['n','الاسم'],['sz','الحجم']].forEach(([v,t])=>{const o=E('option');o.value=v;o.textContent=t;so.append(o)});so.value=SO();so.onchange=()=>{try{localStorage.setItem('inkso',so.value)}catch(e){}home()};i.after(so);const t=E('div');t.id='tgs';l.before(t)}
  const t=$('#tgs');t.innerHTML='';[...new Set(a.map(d=>d.tag).filter(Boolean))].forEach(x=>{const b=E('button','chip'+(S.tg===x?' on':''));b.textContent='📁 '+x;b.onclick=()=>{S.tg=S.tg===x?'':x;home()};t.append(b)})}
