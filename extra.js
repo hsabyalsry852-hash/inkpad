@@ -154,3 +154,33 @@ const upd=()=>{const i=MI[S.t];MB.textContent=i||'🧰';MB.classList.toggle('on'
 const _sy2=sync;sync=()=>{_sy2();upd()};const _pc=pc;pc=()=>{_pc();upd()};
 $('#wd').addEventListener('input',upd);$('#co').addEventListener('input',upd);upd();
 })();
+
+// ---- loading indicator + back button (history based, works on web and in the Android app) ----
+(()=>{
+const st=document.createElement('style');
+st.textContent='#inkbusy{position:fixed;inset:0;z-index:90;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;gap:12px;color:#e2e8f0;font:600 16px system-ui;direction:rtl}#inkbusy i{width:22px;height:22px;border:3px solid #475569;border-top-color:#60a5fa;border-radius:50%;animation:inkspin .8s linear infinite}@keyframes inkspin{to{transform:rotate(360deg)}}#so{margin:6px 0}';
+document.head.append(st);
+let el=null,t1=0,t2=0;
+window.inkBusy=(on,txt)=>{clearTimeout(t1);clearTimeout(t2);
+ if(!on){el&&el.remove();el=null;return}
+ t1=setTimeout(()=>{if(el)return;el=document.createElement('div');el.id='inkbusy';el.innerHTML='<i></i><span></span>';el.querySelector('span').textContent=txt||'جاري التحميل…';document.body.append(el)},200);
+ t2=setTimeout(()=>inkBusy(false),60000)};
+addEventListener('error',()=>inkBusy(false));addEventListener('unhandledrejection',()=>inkBusy(false));
+const fp=document.getElementById('fp');
+fp&&fp.addEventListener('change',e=>{if(e.target.files&&e.target.files[0])inkBusy(true,'جاري فتح الملف…')},true);
+
+let skip=0;const back=()=>{skip=1;setTimeout(()=>{skip=0},500);history.back()};
+const od=window.openDoc;
+window.openDoc=async function(){
+ inkBusy(true,'جاري فتح الملف…');
+ if(!(history.state&&history.state.ink))try{history.pushState({ink:1},'')}catch(e){}
+ try{return await od.apply(this,arguments)}
+ finally{inkBusy(false);const ed=document.getElementById('ed');if(ed&&ed.hidden&&history.state&&history.state.ink)back()}};
+const bk=document.getElementById('bk'),obk=bk.onclick;
+bk.onclick=async function(e){await obk.call(this,e);if(history.state&&history.state.ink)back()};
+addEventListener('popstate',()=>{
+ if(skip){skip=0;return}
+ const pops=[...document.querySelectorAll('.pop,#mm')].filter(p=>!p.hidden);
+ if(pops.length){pops.forEach(p=>p.hidden=true);try{history.pushState({ink:1},'')}catch(e){}return}
+ const ed=document.getElementById('ed');if(ed&&!ed.hidden)obk.call(bk)});
+})();

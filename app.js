@@ -7,11 +7,18 @@ const tx=async(st,m,f)=>{const db=await DB;return new Promise((ok,no)=>{const t=
 const dbPut=d=>tx('d','readwrite',s=>s.put(d));
 const S={t:'pen',c:'#1e40af',w:3,z:1,fit:1,sh:'line',und:[],red:[],pg:[]},W=595,H=842;
 // ---------- home ----------
+const SZ=()=>{try{return JSON.parse(localStorage.getItem('inksz')||'{}')}catch(e){return{}}},
+SO=()=>{try{return localStorage.getItem('inkso')||'u'}catch(e){return'u'}},
+fmt=n=>n<1048576?Math.max(1,Math.round(n/1024))+' KB':(n/1048576).toFixed(1)+' MB',
+inkSort=(x,y)=>{const o=SO(),z=SZ();return o==='n'?String(x.n).localeCompare(String(y.n),'ar'):o==='sz'?(z[y.id]||0)-(z[x.id]||0):y.u-x.u};
+async function bfill(a){if(S.bf)return;const m=SZ(),todo=a.filter(d=>d.k==='pdf'&&m[d.id]===undefined);if(!todo.length)return;S.bf=1;
+ for(const d of todo){try{const b=await tx('f','readonly',s=>s.get(d.id));m[d.id]=b?b.byteLength:0}catch(e){m[d.id]=0}}
+ try{localStorage.setItem('inksz',JSON.stringify(m))}catch(e){}S.bf=0;home()}
 async function home(){$('#ed').hidden=true;$('#home').hidden=false;const l=$('#list');l.innerHTML='';
- const a=(await tx('d','readonly',s=>s.getAll())).sort((x,y)=>y.u-x.u);
- lib(l,a);const q=$('#ls').value.trim().toLowerCase(),fl=a.filter(d=>(!q||(d.n+' '+(d.tag||'')).toLowerCase().includes(q))&&(!S.tg||d.tag===S.tg));if(!a.length)l.innerHTML='<p class="em">لسه مفيش ملفات. افتح PDF أو اعمل ملاحظة جديدة.</p>';
+ const a=(await tx('d','readonly',s=>s.getAll())).sort(inkSort);
+ lib(l,a);bfill(a);const q=$('#ls').value.trim().toLowerCase(),fl=a.filter(d=>(!q||(d.n+' '+(d.tag||'')).toLowerCase().includes(q))&&(!S.tg||d.tag===S.tg));if(!a.length)l.innerHTML='<p class="em">لسه مفيش ملفات. افتح PDF أو اعمل ملاحظة جديدة.</p>';
  fl.forEach(d=>{const r=E('div','it','<div><b></b><small></small></div><button>🗑</button><button class="tg">🏷</button>');
-  r.querySelector('b').textContent=d.n;r.querySelector('small').textContent=(d.k==='pdf'?'PDF':'ملاحظة')+' · '+new Date(d.u).toLocaleDateString('ar-EG')+(d.tag?' · 📁'+d.tag:'');
+  r.querySelector('b').textContent=d.n;r.querySelector('small').textContent=(d.k==='pdf'?'PDF':'ملاحظة')+' · '+new Date(d.u).toLocaleDateString('ar-EG')+(d.k==='pdf'&&SZ()[d.id]?' · '+fmt(SZ()[d.id]):'')+(d.tag?' · 📁'+d.tag:'');
   r.firstChild.onclick=()=>openDoc(d.id);r.querySelector('.tg').onclick=async()=>{const t=prompt('اسم المجلد/الوسم (فاضي = بدون):',d.tag||'');if(t!==null){d.tag=t.trim();await dbPut(d);home()}};
   r.querySelector('button').onclick=async()=>{if(confirm('حذف؟')){await tx('d','readwrite',s=>s.delete(d.id));await tx('f','readwrite',s=>s.delete(d.id));home()}};l.append(r)})}
 $('#fp').onchange=async e=>{const f=e.target.files[0];if(!f)return;const id='p'+Date.now();
@@ -247,5 +254,5 @@ $('#ai').onclick=()=>{const s=hs();s&&open('https://claude.ai/new?q='+encodeURIC
 $('#mgf').onchange=async e=>{const fs=[...e.target.files];e.target.value='';if(fs.length<2)return alert('اختار ملفين PDF على الأقل');
  try{const D=await PDFLib.PDFDocument.create();for(const f of fs){const s=await PDFLib.PDFDocument.load(await f.arrayBuffer());(await D.copyPages(s,s.getPageIndices())).forEach(p=>D.addPage(p))}
   const by=await D.save(),id='p'+Date.now();await tx('f','readwrite',s=>s.put(by.buffer.slice(by.byteOffset,by.byteOffset+by.byteLength),id));await dbPut({id,n:'مدمج '+new Date().toLocaleDateString('ar-EG'),k:'pdf',s:{},u:Date.now()});openDoc(id)}catch(x){alert('فشل الدمج (ممكن ملف محمي بباسورد)')}};
-function lib(l,a){if(!$('#ls')){const i=E('input');i.id='ls';i.type='search';i.placeholder='🔍 ابحث في ملفاتك';i.oninput=home;l.before(i);const t=E('div');t.id='tgs';l.before(t)}
+function lib(l,a){if(!$('#ls')){const i=E('input');i.id='ls';i.type='search';i.placeholder='🔍 ابحث في ملفاتك';i.oninput=home;l.before(i);const so=E('select');so.id='so';[['u','الأحدث'],['n','الاسم'],['sz','الحجم']].forEach(([v,t])=>{const o=E('option');o.value=v;o.textContent=t;so.append(o)});so.value=SO();so.onchange=()=>{try{localStorage.setItem('inkso',so.value)}catch(e){}home()};i.after(so);const t=E('div');t.id='tgs';l.before(t)}
  const t=$('#tgs');t.innerHTML='';[...new Set(a.map(d=>d.tag).filter(Boolean))].forEach(x=>{const b=E('button','chip'+(S.tg===x?' on':''));b.textContent='📁 '+x;b.onclick=()=>{S.tg=S.tg===x?'':x;home()};t.append(b)})}
