@@ -190,7 +190,7 @@ addEventListener('popstate',()=>{
 const K='inkstrip',get=()=>{try{const a=JSON.parse(localStorage.getItem(K)||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}},put=a=>{try{localStorage.setItem(K,JSON.stringify(a.slice(-15)))}catch(e){}};
 let tt=0;const toast=m=>{let t=document.getElementById('inktoast');if(!t){t=document.createElement('div');t.id='inktoast';document.body.append(t)}t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{t.hidden=true},1600)};
 const od=window.openDoc;
-window.openDoc=async function(id){const r=await od.apply(this,arguments);try{if(S.d&&S.d.id===id&&S.d.k==='pdf'&&!document.getElementById('ed').hidden){const a=get();if(!a.includes(id)){a.push(id);put(a)}}}catch(e){}return r};
+window.openDoc=async function(id){S.df=1;const r=await od.apply(this,arguments);try{if(S.d&&S.d.id===id&&S.d.k==='pdf'&&!document.getElementById('ed').hidden){const a=get();if(!a.includes(id)){a.push(id);put(a)}}}catch(e){}return r};
 let busy=0;
 async function go(dir){if(busy||!S.d)return;busy=1;
  try{const a=get(),i=a.indexOf(S.d.id);if(i<0){toast('افتح ملفين PDF على الأقل عشان تتنقل بينهم');return}
@@ -217,3 +217,6 @@ sc.addEventListener('touchend',e=>{if(!g)return;if(g.two?e.touches.length>=2:e.t
  if(ok)go(dx>0?-1:1)},{passive:true});
 sc.addEventListener('touchcancel',()=>{g=null},{passive:true});
 })();
+
+// الطبقة النصية (تحديد النص) بتتبني بس في وضع اليد 🖐
+{const _s3=sync;sync=()=>{_s3();if(S.t==='hand'&&S.pg)S.pg.forEach(el=>{if(el&&el.r&&!el.tl&&nearEl(el,600))buildTl(el.i)})}}

@@ -34,7 +34,7 @@ async function openDoc(id){const d=await tx('d','readonly',s=>s.get(id));S.d=d;S
  const p1=S.pdf?(await S.pdf.getPage(1)).getViewport({scale:1}):{width:W,height:H};
  S.fit=Math.min(2,($('#sc').clientWidth-8)/p1.width);S.z=Math.max(S.fit*.5,Math.min(S.fit*3,S.fit*(d.zr||1)));
  const g=$('#pgs');g.innerHTML='';S.pg=[];S.io&&S.io.disconnect();
- S.io=new IntersectionObserver(es=>es.forEach(e=>{const el=e.target;if(e.isIntersecting)rp(el.i);else{el.bg.width=el.ink.width=1;el.r=null;el.tl&&(el.tl.remove(),el.tl=null)}}),{root:$('#sc'),rootMargin:'300px 0px'});
+ S.io=new IntersectionObserver(es=>es.forEach(e=>{const el=e.target;el.vis=e.isIntersecting;if(e.isIntersecting)rp(el.i);else gcSoon()}),{root:$('#sc'),rootMargin:'300px 0px'});
  for(let i=0;i<n;i++)addPg(i,[p1.width,p1.height]);S.rs=1;rst(d);setTimeout(()=>S.rs=0,700)}
 function rst(d){const el=S.pg[d.pi||0],sc=$('#sc');if(el&&(d.pi||d.po)){const x=el.getBoundingClientRect(),y=sc.getBoundingClientRect();sc.scrollTop+=x.top-y.top+(d.po||0)*x.height}up()}
 function addPg(i,dim){const el=E('div','pg');el.i=i;el.dim=dim;el.bg=E('canvas');el.ink=E('canvas','ink');el.append(el.bg,el.ink);
@@ -45,13 +45,23 @@ async function bgDraw(i,c,k){const el=S.pg[i];c.fillStyle='#fff';c.fillRect(0,0,
  if(t==='lines')for(let y=s*1.5;y<H*k;y+=s){c.beginPath();c.moveTo(0,y);c.lineTo(W*k,y);c.stroke()}
  else if(t==='grid'){for(let y=s;y<H*k;y+=s){c.beginPath();c.moveTo(0,y);c.lineTo(W*k,y);c.stroke()}for(let x=s;x<W*k;x+=s){c.beginPath();c.moveTo(x,0);c.lineTo(x,H*k);c.stroke()}}
  else if(t==='dots')for(let y=s;y<H*k;y+=s)for(let x=s;x<W*k;x+=s)c.fillRect(x-k*.8,y-k*.8,k*1.6,k*1.6)}
-async function rp(i){const el=S.pg[i];if(!el||el.r===S.z)return;el.r=S.z;const t=el.tk=(el.tk||0)+1;
+async function rp0(i){const el=S.pg[i];if(!el||el.r===S.z)return;el.r=S.z;const t=el.tk=(el.tk||0)+1;
  if(S.pdf){const v=(await S.pdf.getPage(i+1)).getViewport({scale:1});el.dim=[v.width,v.height]}
- const w=el.dim[0]*S.z,h=el.dim[1]*S.z;let d=Math.min(devicePixelRatio||1,2);d=Math.max(.8,Math.min(d,Math.sqrt(3e6/(w*h))));const oc=E('canvas');oc.width=w*d;oc.height=h*d;
- await bgDraw(i,oc.getContext('2d'),S.z*d);if(t!==el.tk)return;
+ const w=el.dim[0]*S.z,h=el.dim[1]*S.z;let d=Math.min(devicePixelRatio||1,2)*(S.df||1);d=Math.max(.8,Math.min(d,Math.sqrt(3e6/(w*h))));const oc=E('canvas');oc.width=w*d;oc.height=h*d;
+ const t0=performance.now();await bgDraw(i,oc.getContext('2d'),S.z*d);if(performance.now()-t0>700)S.df=Math.max(.6,(S.df||1)*.85);if(t!==el.tk)return;
  el.style.width=w+'px';el.style.height=h+'px';
  for(const c of[el.bg,el.ink]){c.width=w*d;c.height=h*d;c.style.width=w+'px';c.style.height=h+'px'}
  el.bg.getContext('2d').drawImage(oc,0,0);oc.width=oc.height=0;ink(i);buildTl(i)}
+// رسم الصفحات: صفحة واحدة في المرة، الأقرب لنص الشاشة الأول، وبعد ما السحب يقف. والصفحات القريبة بتفضل محفوظة
+let rq=new Set(),rb=0,rt=0,lsc=0,gt=0;
+const nearEl=(el,m)=>{const a=el.getBoundingClientRect(),b=$('#sc').getBoundingClientRect();return a.bottom>b.top-m&&a.top<b.bottom+m};
+function rp(i){rq.add(i);rpump()}
+function rpump(){if(rb||!rq.size)return;const w=130-(Date.now()-lsc);if(w>0){clearTimeout(rt);rt=setTimeout(rpump,w);return}
+ const r=$('#sc').getBoundingClientRect(),cy=r.top+r.height/2;let best=-1,bd=1e9;
+ for(const i of[...rq]){const el=S.pg&&S.pg[i];if(!el||el.r===S.z||!nearEl(el,700)){rq.delete(i);continue}const q=el.getBoundingClientRect(),dd=Math.abs(q.top+q.height/2-cy);if(dd<bd){bd=dd;best=i}}
+ if(best<0)return;rq.delete(best);rb=1;rp0(best).catch(()=>{}).finally(()=>{rb=0;rpump();gcSoon()})}
+function gcSoon(){clearTimeout(gt);gt=setTimeout(()=>{const m=$('#sc').clientHeight*2;(S.pg||[]).forEach(el=>{if(el&&el.r&&!nearEl(el,m)){el.bg.width=el.ink.width=1;el.r=null;el.tk=(el.tk||0)+1;el.tl&&(el.tl.remove(),el.tl=null)}})},400)}
+$('#sc').addEventListener('scroll',()=>{lsc=Date.now();clearTimeout(rt);rt=setTimeout(rpump,140)},{passive:true});
 function ds(c,o,k){c.save();c.lineCap=c.lineJoin='round';c.strokeStyle=c.fillStyle=o.c;c.lineWidth=o.w*k*(o.t==='hl'?4:1);if(o.t==='hl')c.globalAlpha=.35;
  if(o.t==='im'){const g=im(o.src);if(g.complete&&g.naturalWidth)c.drawImage(g,o.p[0][0]*k,o.p[0][1]*k,o.w*k,o.h*k);c.restore();return}
  if(o.t==='hr'){c.globalAlpha=.4;c.fillStyle=o.c;o.rs.forEach(r=>c.fillRect(r[0]*k,r[1]*k,r[2]*k,r[3]*k));c.restore();return}
@@ -183,10 +193,10 @@ home();
 
 // ---------- text layer (select / copy / highlight) ----------
 const mc=document.createElement('canvas').getContext('2d');
-async function buildTl(i){const el=S.pg[i];if(!S.pdf||!el||el.tl||el.tb)return;el.tb=1;await new Promise(r=>setTimeout(r,200));el.tb=0;if(!el.r||el.tl)return;const T=await ptxt(i);if(el.tl||!el.r)return;
+async function buildTl(i){const el=S.pg[i];if(S.t!=='hand'||!S.pdf||!el||el.tl||el.tb)return;el.tb=1;await new Promise(r=>setTimeout(r,200));el.tb=0;if(!el.r||el.tl)return;const T=await ptxt(i);if(el.tl||!el.r)return;
  const d=E('div','tl'),fr=document.createDocumentFragment();d.style.cssText='width:'+T.w+'px;height:'+T.h+'px;transform:scale('+S.z+')';
- T.it.forEach(t=>{if(!t.str.trim())return;mc.font=t.h+'px sans-serif';const w=mc.measureText(t.str).width,x=w&&t.w?t.w/w:1,s=E('span');s.textContent=t.str;
-  s.style.cssText='left:'+t.x+'px;top:'+(t.y-t.h*.82)+'px;font-size:'+t.h+'px;transform-origin:0 82%;transform:rotate('+Math.atan2(t.dy,t.dx)+'rad) scaleX('+(isFinite(x)&&x>0?x:1)+')';fr.append(s)});
+ let ci=0;for(const t of T.it){if(!t.str.trim())continue;mc.font=t.h+'px sans-serif';const w=mc.measureText(t.str).width,x=w&&t.w?t.w/w:1,s=E('span');s.textContent=t.str;
+  s.style.cssText='left:'+t.x+'px;top:'+(t.y-t.h*.82)+'px;font-size:'+t.h+'px;transform-origin:0 82%;transform:rotate('+Math.atan2(t.dy,t.dx)+'rad) scaleX('+(isFinite(x)&&x>0?x:1)+')';fr.append(s);if(++ci%400===0){await new Promise(r=>requestAnimationFrame(r));if(!el.r||el.tl)return}}
  d.append(fr);el.insertBefore(d,el.ink);el.tl=d}
 const hs=()=>{const s=getSelection();return S.t==='hand'&&s&&!s.isCollapsed&&$('#pgs').contains(s.anchorNode)?s:null};
 document.addEventListener('selectionchange',()=>{$('#sa').hidden=!hs()});
