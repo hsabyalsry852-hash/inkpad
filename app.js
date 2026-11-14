@@ -118,15 +118,27 @@ function pc(){cl.querySelectorAll('.sw').forEach(b=>b.classList.toggle('on',b.da
 ['#1e40af','#dc2626','#16a34a','#111827','#facc15','#9333ea'].forEach(c=>{const b=E('button','sw');b.style.background=c;b.dataset.c=c;b.onclick=()=>{S.c=c;$('#co').value=c;pc()};cl.append(b)});
 $('#co').oninput=e=>{S.c=e.target.value;pc()};pc();sync();
 const vis=el=>{const a=el.getBoundingClientRect(),b=$('#sc').getBoundingClientRect();return a.bottom>b.top-600&&a.top<b.bottom+600};
-function zoom(z){z=Math.max(S.fit*.5,Math.min(S.fit*3,z));const sc=$('#sc'),rx=(sc.scrollLeft+sc.clientWidth/2)/sc.scrollWidth,ry=(sc.scrollTop+sc.clientHeight/2)/sc.scrollHeight;
+function zoom(z,A){z=Math.max(S.fit*.5,Math.min(S.fit*3,z));const sc=$('#sc'),o=S.z,rx=(sc.scrollLeft+sc.clientWidth/2)/sc.scrollWidth,ry=(sc.scrollTop+sc.clientHeight/2)/sc.scrollHeight;
  S.z=z;S.pg.forEach(el=>{el.style.width=el.dim[0]*z+'px';el.style.height=el.dim[1]*z+'px';el.r=null;el.tl&&(el.tl.style.transform='scale('+z+')')});S.d.zr=z/S.fit;save();
- sc.scrollLeft=rx*sc.scrollWidth-sc.clientWidth/2;sc.scrollTop=ry*sc.scrollHeight-sc.clientHeight/2;
+ if(A){const r=z/o;sc.scrollLeft=A.fx*r-A.cx;sc.scrollTop=A.fy*r-A.cy}else{sc.scrollLeft=rx*sc.scrollWidth-sc.clientWidth/2;sc.scrollTop=ry*sc.scrollHeight-sc.clientHeight/2}
  S.pg.forEach(el=>vis(el)&&rp(el.i))}
 $('#zi').onclick=()=>zoom(S.z*1.25);$('#zo').onclick=()=>zoom(S.z/1.25);
 const dist=e=>Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-$('#sc').addEventListener('touchstart',e=>{if(e.touches.length===2){S.pd=dist(e);S.pl=S.pd;S.pz=S.z;S.pg.forEach(el=>{el.dn=0;el.cur=null;if(el.ink.width>1)ink(el.i)})}},{passive:true});
-$('#sc').addEventListener('touchmove',e=>{if(S.pd&&e.touches.length===2)S.pl=dist(e)},{passive:true});
-$('#sc').addEventListener('touchend',e=>{if(S.pd&&e.touches.length<2){const r=S.pl/S.pd;S.pd=0;if(Math.abs(r-1)>.05)zoom(S.pz*r)}},{passive:true});
+// تكبير بالصوابع: معاينة فورية بـ transform (GPU) وبعدين تثبيت الزوم الحقيقي لما ترفع صوابعك
+let PN=null,pnr=0;
+const mid2=e=>{const sr=$('#sc').getBoundingClientRect();return[(e.touches[0].clientX+e.touches[1].clientX)/2-sr.left,(e.touches[0].clientY+e.touches[1].clientY)/2-sr.top]};
+const pnApply=()=>{pnr=0;if(!PN)return;const g=$('#pgs');g.style.transform='translate('+(PN.cx-PN.cx0)+'px,'+(PN.cy-PN.cy0)+'px) scale('+PN.r+')'};
+function pnEnd(){if(!PN)return;const P=PN,g=$('#pgs');PN=null;S.pd=0;cancelAnimationFrame(pnr);pnr=0;g.style.transform='';g.style.transformOrigin='';g.style.willChange='';
+ if(Math.abs(P.r-1)>.02)zoom(P.z0*P.r,{fx:P.fx,fy:P.fy,cx:P.cx,cy:P.cy})}
+$('#sc').addEventListener('touchstart',e=>{if(e.touches.length===2&&!PN){const sc=$('#sc'),g=$('#pgs'),[cx,cy]=mid2(e),pr=g.getBoundingClientRect(),sr=sc.getBoundingClientRect();
+  PN={d0:dist(e),z0:S.z,r:1,cx0:cx,cy0:cy,cx:cx,cy:cy,sl:sc.scrollLeft,st:sc.scrollTop,fx:sc.scrollLeft+cx,fy:sc.scrollTop+cy};S.pd=PN.d0;
+  g.style.transformOrigin=(cx+sr.left-pr.left)+'px '+(cy+sr.top-pr.top)+'px';g.style.willChange='transform';
+  S.pg.forEach(el=>{el.dn=0;el.cur=null;if(el.ink.width>1)ink(el.i)});e.cancelable&&e.preventDefault()}},{passive:false});
+$('#sc').addEventListener('touchmove',e=>{if(PN&&e.touches.length===2){const sc=$('#sc'),[cx,cy]=mid2(e);
+  PN.r=Math.max(S.fit*.5/PN.z0,Math.min(S.fit*3/PN.z0,dist(e)/PN.d0));PN.cx=cx;PN.cy=cy;sc.scrollLeft=PN.sl;sc.scrollTop=PN.st;
+  pnr||(pnr=requestAnimationFrame(pnApply));e.cancelable&&e.preventDefault()}},{passive:false});
+$('#sc').addEventListener('touchend',e=>{if(PN&&e.touches.length<2)pnEnd()},{passive:true});
+$('#sc').addEventListener('touchcancel',()=>pnEnd(),{passive:true});
 function up(){const sc=$('#sc'),m=sc.getBoundingClientRect().top+sc.clientHeight/3;let c=0;S.pg.forEach((el,i)=>{if(el.getBoundingClientRect().top<=m)c=i});$('#pn').textContent=(c+1)+'/'+S.pg.length;S.cp=c;updBm();if(!S.rs&&S.d&&S.pg[c]){const x=S.pg[c].getBoundingClientRect(),y=sc.getBoundingClientRect();S.d.pi=c;S.d.po=(y.top-x.top)/x.height;save()}}
 let ur=0;$('#sc').onscroll=()=>{ur||(ur=requestAnimationFrame(()=>{ur=0;up()}))};
 $('#pn').onclick=()=>{inkAsk('رقم الصفحة:').then(v=>{const n=+v;if(n>0&&n<=S.pg.length)S.pg[n-1].scrollIntoView()})};
