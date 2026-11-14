@@ -122,6 +122,8 @@ jobs:
           import android.content.Intent;
           import android.os.Bundle;
 
+          import androidx.activity.OnBackPressedCallback;
+
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
@@ -130,6 +132,18 @@ jobs:
                   registerPlugin(InkOpenPlugin.class);
                   super.onCreate(savedInstanceState);
                   InkOpenPlugin.handle(this, getIntent());
+
+                  // Back button: ask the page first (close menu / close open document); exit only if it says no.
+                  getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+                      @Override
+                      public void handleOnBackPressed() {
+                          getBridge().getWebView().evaluateJavascript(
+                              "(function(){try{return window.inkBack?window.inkBack():false}catch(e){return false}})()",
+                              value -> {
+                                  if (!"true".equals(value)) finish();
+                              });
+                      }
+                  });
               }
 
               @Override
@@ -180,6 +194,14 @@ jobs:
               return;
             }
             return orig.apply(this,arguments);
+          };
+          // 3) Android back button: called from MainActivity. Returns true if the page handled it.
+          window.inkBack=()=>{
+            const pops=[...document.querySelectorAll('.pop,#mm')].filter(p=>!p.hidden);
+            if(pops.length){pops.forEach(p=>p.hidden=true);return true}
+            const ed=document.getElementById('ed'),bk=document.getElementById('bk');
+            if(ed&&!ed.hidden&&bk){bk.click();return true}
+            return false;
           };
           })();
           EOF
