@@ -2,7 +2,7 @@
 <html lang="ar"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b1120"><link rel="manifest" href="manifest.json">
-<link rel="icon" href="icon-192.png"><title>InkPad</title><link rel="stylesheet" href="style.css">
+<link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><title>InkPad</title><link rel="stylesheet" href="style.css">
 <script>try{var _l=JSON.parse(localStorage.getItem("inklock")||"null");if(_l&&_l.a){document.documentElement.classList.add("locked");setTimeout(function(){if(!window.inkLockReady)document.documentElement.classList.remove("locked")},6000)}}catch(e){}</script></head>
 <body>
 <section id="home">
@@ -26,14 +26,14 @@
 </div>
 </section>
 <section id="ed" hidden>
-<div id="top"><button id="bk" aria-label="رجوع"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button><b id="ttl"></b><button id="sq" hidden aria-label="بحث"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button><button id="aq" hidden aria-label="اسأل AI"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button><button id="mn" aria-label="الحقيبة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg></button><button id="pb" aria-label="الصفحات"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg></button><button id="bm" aria-label="علامة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg></button><button id="pn"></button><button id="ex">⬇ PDF</button></div>
-<div id="sb" hidden><input id="si" type="search" dir="auto" placeholder="بحث في الملف" enterkeyhint="search"><button id="sp">▲</button><button id="sn">▼</button><button id="sl" aria-label="قايمة النتايج">☰</button><span id="cnt"></span><button id="sx">✕</button></div>
+<div id="top"><button id="bk" aria-label="رجوع"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button><b id="ttl"></b><button id="sq" hidden aria-label="بحث"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button><button id="aq" hidden aria-label="اسأل AI"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></button><button id="mn" aria-label="الحقيبة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></svg></button><button id="pb" aria-label="الصفحات"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg></button><button id="bm" aria-label="علامة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z"/></svg></button><button id="pn" aria-label="رقم الصفحة"></button><button id="ex">⬇ PDF</button></div>
+<div id="sb" hidden><input id="si" type="search" dir="auto" placeholder="بحث في الملف" enterkeyhint="search"><button id="sp" aria-label="النتيجة السابقة">▲</button><button id="sn" aria-label="النتيجة التالية">▼</button><button id="sl" aria-label="قايمة النتايج">☰</button><span id="cnt"></span><button id="sx" aria-label="إغلاق البحث">✕</button></div>
 <div id="sc"><div id="pgs"></div></div>
 <div id="tb">
 <button id="g-pen" aria-label="القلم"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.4 3.6a2.1 2.1 0 0 1 3 3L7.4 18.6a2 2 0 0 1-.9.5l-2.9.8a.5.5 0 0 1-.6-.6l.8-2.9a2 2 0 0 1 .5-.9z"/></svg></button><button id="g-th" aria-label="هايلايت النص + ترجمة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16"/><path d="m7 15 5-11 5 11"/><path d="M9 11.5h6"/></svg></button><button id="g-add" aria-label="إضافات"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8"/><path d="M8 12h8"/></svg></button><i class="sep"></i>
 <button id="tmb" aria-label="الحقيبة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><rect width="20" height="14" x="2" y="6" rx="2"/></svg></button><i class="sep"></i>
 <button id="un" aria-label="تراجع"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button id="re" aria-label="إعادة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button><i class="sep"></i>
-<button id="tcb"><i id="dot"></i></button><button id="ap" hidden>📄＋</button>
+<button id="tcb" aria-label="اللون والسُمك"><i id="dot"></i></button><button id="ap" hidden aria-label="صفحة جديدة">📄＋</button>
 </div>
 <div id="psb" class="sbar" hidden><button data-t="pen" aria-label="قلم"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.4 3.6a2.1 2.1 0 0 1 3 3L7.4 18.6a2 2 0 0 1-.9.5l-2.9.8a.5.5 0 0 1-.6-.6l.8-2.9a2 2 0 0 1 .5-.9z"/></svg></button><button data-t="hl" aria-label="هايلايتر"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg></button><button data-t="lz" aria-label="ليزر"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3z"/></svg></button><button data-t="er" aria-label="ممسحة"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg></button></div>
 <div id="tsb" class="sbar" hidden><span>حدّد نص ← لون / ترجمة</span><button id="tat">🌐 تلقائي: إيقاف</button></div>
@@ -50,23 +50,23 @@
 <h5>اللون</h5><div class="row"><span id="cl" style="display:contents"></span><input id="co" type="color" value="#1e40af"></div>
 <h5>السُمك</h5><input id="wd" type="range" min="1" max="12" value="3" style="width:100%"><span id="pv"></span>
 </div>
-<div id="pl" hidden><div id="plh"><button data-p="pg" class="on">📄 الصفحات</button><button data-p="toc">📑 الفهرس</button><button data-p="bm">⭐ العلامات</button><button data-p="hl">🖍 الهايلايت</button><button data-p="fc">🃏 الكروت</button><button data-p="au">🎙 التسجيلات</button><button id="plx">✕</button></div><div id="plb"></div></div>
+<div id="pl" hidden><div id="plh"><button data-p="pg" class="on">📄 الصفحات</button><button data-p="toc">📑 الفهرس</button><button data-p="bm">⭐ العلامات</button><button data-p="hl">🖍 الهايلايت</button><button data-p="fc">🃏 الكروت</button><button data-p="au">🎙 التسجيلات</button><button id="plx" aria-label="إغلاق">✕</button></div><div id="plb"></div></div>
 <div id="mm" hidden>
 <h4>✍ الكتابة</h4><button id="m-po">🖐 وضع القلم فقط: إيقاف</button><button id="m-rl">📏 مسطرة (خط مستقيم): إيقاف</button><button id="m-gs">🔲 محاذاة للشبكة: إيقاف</button>
 <h4>📚 المذاكرة</h4><button id="m-fc">🃏 كروت المراجعة</button><button id="m-rc">🎙 تسجيل صوت</button><button id="m-tm">⏱ مؤقت مذاكرة 25 دقيقة</button><button id="m-ocr">🔎 OCR للصفحة</button><button id="m-fo">🎯 وضع التركيز</button><button id="m-cv">🙈 إخفاء إجابة (ارسم مستطيل)</button><button id="m-ra">👁 إظهار كل الإجابات: إيقاف</button><button id="m-rv">⭐ قائمة المراجعة</button><button id="m-st">📊 وقت المذاكرة والهدف</button><button id="m-hc">📚 تجميعة الهايلايتات: إيقاف</button><button id="m-hcb" hidden>📄 اعمل PDF بالهايلايتات</button>
-<h4>✨ الذكاء الاصطناعي</h4><button id="m-sm">📝 لخّص الصفحة</button><button id="m-ch">💬 اسأل الـAI عن الملف</button><button id="m-hl">🖍 الـAI يحدد المهم بالهايلايت</button><button id="m-ky">⚙ إعدادات AI</button>
+<h4>✨ الذكاء الاصطناعي</h4><button id="m-sm">📝 لخّص الصفحة</button><button id="m-ch">💬 اسأل الـAI عن الملف</button><button id="m-hl">🖍 الـAI يحدد المهم بالهايلايت</button>
 <h4>📑 الصفحات</h4><button id="m-pi">➕ صفحة فاضية بعدها</button><button id="m-pd">🗑 حذف الصفحة</button><button id="m-pu">⬆ نقل لفوق</button><button id="m-pn">⬇ نقل لتحت</button>
 <h4>👁 العرض</h4><button id="m-nt">🌙 وضع ليلي للـPDF</button><button id="m-th">🎨 المظهر: داكن</button><button id="m-ey">👁 راحة العين: إيقاف</button></div>
 <span id="tmr" hidden></span>
 <button id="fxb">✕ إنهاء التركيز</button>
 <div id="lsb" hidden><button id="l-d">🗑</button><button id="l-m">➖</button><button id="l-p">➕</button><button id="l-x">✕</button></div>
-<div id="air" hidden><div id="aib"></div><div><button id="aic">📋 نسخ</button> <button id="aix">✕</button></div></div>
+<div id="air" hidden><div id="aib"></div><div><button id="aic">📋 نسخ</button> <button id="aix" aria-label="إغلاق">✕</button></div></div>
 <div id="sa" hidden><div class="sac"></div><div class="sab"><button id="tr">🌐 ترجمة</button><button id="ai">✨ اشرح</button><button id="cp">📋 نسخ</button><button id="hd" hidden>🗑 حذف</button></div></div>
 <div id="trb" class="pop" hidden><div class="trh"><b>🌐 ترجمة</b><button id="trc" aria-label="نسخ">📋</button><button id="trx" aria-label="إغلاق">✕</button></div><div id="trt"></div><div id="trs"></div><div id="trw"></div></div>
 <div id="dkL" class="dkz"></div><div id="dkB" class="dkz"></div>
 </section>
-<div id="rv" class="ov" hidden><div class="ph"><b>⭐ قائمة المراجعة</b><button id="rvx">✕</button></div><div id="rvb" class="ob"></div></div>
-<div id="stp" class="ov" hidden><div class="ph"><b>📊 وقت المذاكرة</b><button id="stx">✕</button></div><div id="stb" class="ob"></div></div>
+<div id="rv" class="ov" hidden><div class="ph"><b>⭐ قائمة المراجعة</b><button id="rvx" aria-label="إغلاق">✕</button></div><div id="rvb" class="ob"></div></div>
+<div id="stp" class="ov" hidden><div class="ph"><b>📊 وقت المذاكرة</b><button id="stx" aria-label="إغلاق">✕</button></div><div id="stb" class="ob"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script>

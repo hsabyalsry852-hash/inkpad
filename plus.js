@@ -72,7 +72,11 @@ const bioAvail=async()=>{if(_av!==null)return _av;const p=NP();if(!p)return _av=
 let authing=0;
 async function bioAuth(sub){const p=NP();if(!p)return false;authing++;try{const r=await p.authenticate({title:'InkPad',subtitle:sub||'أكّد بالبصمة'});return !!(r&&r.ok)}catch(e){return false}finally{setTimeout(()=>{authing=Math.max(0,authing-1)},600)}}
 async function hashPin(pin,salt){try{const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pin));return[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;const s=salt+':'+pin;for(let i=0;i<s.length;i++)h=(h*33^s.charCodeAt(i))>>>0;return'x'+h}}
-const chkPin=async p=>{const L=LK();return !!L&&(await hashPin(p,L.s))===L.h};
+async function pbk(pin,salt){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveBits']),b=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:150000,hash:'SHA-256'},k,256);return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+// v:2 = PBKDF2. الأرقام القديمة (SHA-256 بسيط) بتتحدّث لوحدها أول ما تتكتب صح
+const chkPin=async p=>{const L=LK();if(!L)return false;
+ if(L.v===2){try{return(await pbk(p,L.s))===L.h}catch(e){return false}}
+ const ok=(await hashPin(p,L.s))===L.h;if(ok){try{const h=await pbk(p,L.s);lss(LKK,{...L,v:2,h})}catch(e){}}return ok};
 const FK='inklockf',fl=()=>lsg(FK,{n:0,u:0}),waitS=()=>Math.max(0,Math.ceil((fl().u-Date.now())/1000));
 const FP='<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10a2 2 0 0 0-2 2c0 1.02-.1 2.51-.26 4"/><path d="M14 13.12c0 2.38 0 6.38-1 8.88"/><path d="M17.29 21.02c.12-.6.43-2.3.5-3.02"/><path d="M2 12a10 10 0 0 1 18-6"/><path d="M21.8 16c.2-2 .131-5.354 0-6"/><path d="M5 19.5C5.5 18 6 15 6 12a6 6 0 0 1 .34-2"/><path d="M8.65 22c.21-.66.45-1.32.57-2"/><path d="M9 6.8a6 6 0 0 1 9 5.2v2"/></svg>';
 let lkCancel=null;
@@ -107,7 +111,8 @@ async function verify(o={}){const L=LK();if(!L)return true;const bio=!!L.b&&awai
 async function newPin(title){const a=await pad({title:title||'اختار رقم سري (4 أرقام على الأقل)',cancel:true});if(a==null)return null;
  const b=await pad({title:'اكتب الرقم تاني للتأكيد',cancel:true});if(b==null)return null;
  if(a!==b){alert('الرقمين مش زي بعض. جرّب تاني');return newPin(title)}return a}
-async function savePin(p){const old=LK()||{},s=Math.random().toString(36).slice(2)+Date.now().toString(36);lss(LKK,{s,h:await hashPin(p,s),b:old.b?1:0,a:old.a?1:0})}
+async function savePin(p){const old=LK()||{},s=(()=>{try{return[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){return Math.random().toString(36).slice(2)+Date.now().toString(36)}})();
+ let v=0,h;try{h=await pbk(p,s);v=2}catch(e){h=await hashPin(p,s)}lss(LKK,{s,h,v,b:old.b?1:0,a:old.a?1:0})}
 // قفل ملف معيّن (الزرار 🔒 جنب اسم الملف)
 window.inkLockToggle=async d=>{if(!LK()){if(!await inkYN('لازم تعمل رقم سري الأول عشان تقفل الملفات. تعمله دلوقتي؟'))return;const p=await newPin();if(!p)return;await savePin(p);
   if(await bioAvail()&&await inkYN('تفعّل فتح الملفات بالبصمة كمان؟')&&await bioAuth('تفعيل البصمة')){const L=LK();L.b=1;lss(LKK,L)}}
@@ -127,7 +132,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){hidT=Date.
  if(!hidT||authing)return;const L=LK();if(!L||Date.now()-hidT<20000)return;hidT=0;
  if(L.a)lockApp();else if(S.d&&S.d.lk&&!$('#ed').hidden)relockDoc()});
 {const ob=window.inkBack;window.inkBack=()=>{if(document.getElementById('lkov')){if(lkCancel){lkCancel();return true}return false}return ob?ob():false}}
-window.inkLockReady=1;
+window.inkVerify=verify;window.inkLockReady=1;
 {const L=LK();if(L&&L.a)lockApp();else document.documentElement.classList.remove('locked')}
 
 // شاشة إعدادات القفل
@@ -146,7 +151,7 @@ async function lockSet(){const old=$('#lks');old&&old.remove();
   row('🔑 تغيير الرقم السري','',async()=>{if(!await verify())return;const p=await newPin('اختار الرقم السري الجديد');if(!p)return;await savePin(p);tst('اتغيّر الرقم السري');R()});
   row('🗑 إيقاف القفل نهائيًا','',async()=>{if(!await verify())return;if(!await inkYN('حذف الرقم السري وفتح كل الملفات؟','نعم','لا',1))return;try{localStorage.removeItem(LKK);localStorage.removeItem(FK)}catch(e){}R();home()});
   const n=(await tx('d','readonly',s=>s.getAll())).filter(d=>d.lk).length;
-  note('الملفات المقفولة: '+n+'. لقفل/فك ملف اضغط 🔒 جنب اسمه في "ملفاتي". بعد 5 محاولات غلط بتستنى 30 ثانية.')};
+  note('الملفات المقفولة: '+n+'. لقفل/فك ملف اضغط 🔒 جنب اسمه في "ملفاتي". بعد 5 محاولات غلط بتستنى 30 ثانية. ملحوظة: القفل بيمنع الفتح من جوه التطبيق، لكن الملفات نفسها مش مشفّرة على التخزين.')};
  R()}
 $('#h-lk')&&($('#h-lk').onclick=lockSet);
 

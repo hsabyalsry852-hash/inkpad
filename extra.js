@@ -22,47 +22,45 @@ const _sy=sync;sync=()=>{_sy();S.t!=='ls'&&LS.sel.length&&LS.x()};
 const tg=(id,k,t)=>$(id).onclick=()=>{S[k]=!S[k];$(id).textContent=t+': '+(S[k]?'شغال':'إيقاف');$(id).classList.toggle('on',S[k])};
 tg('#m-rl','rl','📏 مسطرة (خط مستقيم)');tg('#m-gs','gs','🔲 محاذاة للشبكة');
 // ---- AI ----
-const AIC={u:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',m:'gemini-flash-latest',k:''};
-const aiCfg=()=>{try{return Object.assign({},AIC,JSON.parse(localStorage.getItem('inkai')||'{}'))}catch(e){return{...AIC}}};
+try{localStorage.removeItem('inkai')}catch(e){}
 const showAI=t=>{$('#aib').textContent=t;$('#air').hidden=false};
 $('#aix').onclick=()=>$('#air').hidden=true;$('#aic').onclick=()=>navigator.clipboard.writeText($('#aib').textContent);
 const AISYS='أنت مساعد مذاكرة لطالب علاج طبيعي. أجب بالعربية المصرية المبسطة وخلّي المصطلحات الطبية بالإنجليزية. كن مختصرًا.';
-async function aiChat(msgs,sys){const c=aiCfg(),h={'content-type':'application/json'},fr=!c.k;
- const u=fr?'https://text.pollinations.ai/openai':c.u,md=fr?'openai':c.m;fr||(h.authorization='Bearer '+c.k);
- let r,j;try{r=await fetch(u,{method:'POST',headers:h,body:JSON.stringify({model:md,max_tokens:4000,messages:[{role:'system',content:sys||AISYS},...msgs]})})}catch(x){throw Error(fr?'تعذر الاتصال بالخدمة المجانية (ممكن تكون واقفة). جرّب بعدين أو حط مفتاح من ⚙ إعدادات AI':'مفيش اتصال')}
- try{j=await r.json()}catch(x){throw Error(fr?'الخدمة المجانية رجّعت رد مش مفهوم ('+r.status+'). ممكن تكون محتاجة مفتاح دلوقتي.':'رد غير مفهوم ('+r.status+')')}
- if(!r.ok)throw Error((j.error&&(j.error.message||j.error))||(Array.isArray(j)&&j[0]&&j[0].error&&j[0].error.message)||(fr?'الخدمة المجانية رفضت الطلب ('+r.status+'). ممكن تكون محتاجة مفتاح.':r.status));
+// موافقة مرة واحدة قبل أي استخدام لخدمة خارجية (الذكاء الاصطناعي / الترجمة أونلاين)
+window.inkNetOk=async()=>{try{if(localStorage.getItem('inknet')==='1')return true}catch(e){}
+ const ok=await inkYN('الميزة دي بتبعت النص اللي بتختاره (أو نص الصفحة) لخدمة خارجية على الإنترنت (ذكاء اصطناعي مجاني / ترجمة). الملفات نفسها مش بتتبعت، النص المطلوب بس. موافق؟','موافق','لا',1);
+ if(ok)try{localStorage.setItem('inknet','1')}catch(e){}return !!ok};
+async function aiChat(msgs,sys){if(!await inkNetOk())return null;let r,j;
+ try{r=await fetch('https://text.pollinations.ai/openai',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({model:'openai',max_tokens:4000,messages:[{role:'system',content:sys||AISYS},...msgs]}),...(window.AbortSignal&&AbortSignal.timeout?{signal:AbortSignal.timeout(90000)}:{})})}catch(x){throw Error('تعذر الاتصال بخدمة الذكاء الاصطناعي (ممكن مفيش نت أو الخدمة واقفة). جرّب بعدين')}
+ try{j=await r.json()}catch(x){throw Error('الخدمة رجّعت رد مش مفهوم ('+r.status+'). جرّب بعدين')}
+ if(!r.ok)throw Error(String((j&&j.error&&(j.error.message||j.error))||(Array.isArray(j)&&j[0]&&j[0].error&&j[0].error.message)||('الخدمة رفضت الطلب ('+r.status+')')));
  const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;if(!t)throw Error('رد فاضي');return t}
 async function ai(p,sys){return aiChat([{role:'user',content:p}],sys)}
 $('#ai').onclick=async()=>{const t=selTxt();if(!t)return;
  showAI('⏳ …');try{const r=await ai('اشرح بشكل مبسط:\n'+t);r?showAI(r):$('#air').hidden=true}catch(e){showAI('خطأ: '+e.message)}};
 $('#m-sm').onclick=async()=>{$('#mm').hidden=true;if(!S.pdf)return alert('التلخيص للـPDF بس');const T=await ptxt(S.cp||0),t=T.it.map(x=>x.str).join(' ').trim();if(!t)return alert('الصفحة مفيهاش نص. جرّب OCR الأول');
  showAI('⏳ …');try{const r=await ai('لخّص النص ده في نقاط قصيرة:\n'+t.slice(0,12000));r?showAI(r):$('#air').hidden=true}catch(e){showAI('خطأ: '+e.message)}};
-$('#m-ky').onclick=async()=>{$('#mm').hidden=true;const c=aiCfg();let v=await inkAsk('رابط مزوّد AI (متوافق مع OpenAI):',c.u);if(v===null)return;c.u=v.trim()||AIC.u;
- v=await inkAsk('اسم المودل:',c.m);if(v===null)return;c.m=v.trim()||AIC.m;
- v=await inkAsk('مفتاح Gemini (اختياري. فاضي = استخدام الخدمة المجانية من غير مفتاح):',c.k);if(v===null)return;c.k=v.trim();
- try{localStorage.setItem('inkai',JSON.stringify(c))}catch(x){}};
 // ---- flashcards ----
-const cz=t=>{const w=t.split(/\s+/).filter(x=>x.length>3).sort((a,b)=>b.length-a.length)[0];return w?t.replace(w,'＿＿＿＿'):t};
+const cz=t=>{const ws=t.split(/\s+/).map(x=>x.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,'')).filter(x=>x.length>3),lt=ws.filter(x=>/^[A-Za-z][A-Za-z-]*$/.test(x)),w=(lt.length?lt:ws).sort((a,b)=>b.length-a.length)[0];return w?t.replace(w,'＿＿＿＿'):t};
 const hls=()=>{const L=[];S.pg.forEach((_,i)=>(S.d.s[i]||[]).forEach(o=>o.t==='hr'&&o.tx&&o.tx.trim().length>8&&L.push([i,o.tx.trim()])));return L};
 async function aiCards(){const H=hls();if(!H.length)return alert('ظلّل نص بالهايلايت الأول');showAI('⏳ بعمل الكروت…');
  try{const t=await ai('حوّل الجمل دي لكروت مراجعة (سؤال وإجابة قصيرة). رجّع JSON array فقط بالشكل [{"q":"","a":""}] بدون أي كلام تاني:\n'+H.map(x=>x[1]).join('\n').slice(0,8000));if(!t)return $('#air').hidden=true;
   (S.d.ai=S.d.ai||[]).push(...JSON.parse(t.match(/\[[\s\S]*\]/)[0]).filter(x=>x.q&&x.a));save();$('#air').hidden=true;plR()}catch(e){showAI('خطأ: '+e.message)}}
 $('#m-fc').onclick=()=>{$('#mm').hidden=true;tab='fc';$('#pl').hidden=false;plR()};
-let cur=null;
+let cur=null,curU=null;
 const _pl=plR;plR=function(){if(tab!=='fc'&&tab!=='au')return _pl();const b=$('#plb');b.innerHTML='';b.classList.add('l');document.querySelectorAll('#plh [data-p]').forEach(x=>x.classList.toggle('on',x.dataset.p===tab));
  if(tab==='fc'){const C=[...(S.d.ai||[]),...hls().map(([i,t])=>({q:cz(t),a:t}))],g=E('button');g.textContent='✨ كروت بالـAI من الهايلايت';g.onclick=aiCards;b.append(g);
   if(!C.length){const p=E('p');p.textContent='ظلّل نص بالهايلايت وهيتحوّل لكروت هنا. اضغط على الكارت لإظهار الإجابة.';b.append(p)}
   C.forEach(c=>{const d=E('div','hi');let f=0;d.textContent='❓ '+c.q;d.onclick=()=>{f=!f;d.textContent=f?'✅ '+c.a:'❓ '+c.q};b.append(d)});return}
  if(!(S.d.au||[]).length){const p=E('p');p.textContent='مفيش تسجيلات. ابدأ من ⋯ ← 🎙 تسجيل صوت.';b.append(p)}
  (S.d.au||[]).forEach((r,j)=>{const d=E('div','hi','<b></b> <button>▶</button> <button>🗑</button>');d.querySelector('b').textContent='ص '+(r.pg+1)+' · '+new Date(r.t).toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});const[p,x]=d.querySelectorAll('button');
-  p.onclick=async()=>{const f=await tx('f','readonly',s=>s.get(r.k));cur&&cur.pause();cur=new Audio(URL.createObjectURL(new Blob([f],{type:r.m})));cur.play()};
+  p.onclick=async()=>{const f=await tx('f','readonly',s=>s.get(r.k));if(!f)return alert('ملف التسجيل مش موجود');cur&&cur.pause();curU&&URL.revokeObjectURL(curU);curU=URL.createObjectURL(new Blob([f],{type:r.m}));cur=new Audio(curU);cur.play().catch(()=>{})};
   x.onclick=async()=>{if(!await inkConfirm('حذف التسجيل؟'))return;await tx('f','readwrite',s=>s.delete(r.k));S.d.au.splice(j,1);save();plR()};b.append(d)})};
 // ---- audio recording ----
 let MR=null,CHT=[];$('#m-rc').onclick=async()=>{const b=$('#m-rc');if(MR){MR.stop();return}
- try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),pg=S.cp||0;MR=new MediaRecorder(st);CHT=[];MR.ondataavailable=e=>CHT.push(e.data);
+ try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),pg=S.cp||0,dd=S.d;MR=new MediaRecorder(st);CHT=[];MR.ondataavailable=e=>CHT.push(e.data);
   MR.onstop=async()=>{st.getTracks().forEach(t=>t.stop());const m=MR.mimeType||'audio/webm',ab=await new Blob(CHT,{type:m}).arrayBuffer(),k='a'+Date.now();MR=null;b.textContent='🎙 تسجيل صوت';$('#mn').style.color='';
-   await tx('f','readwrite',s=>s.put(ab,k));(S.d.au=S.d.au||[]).push({k,pg,t:Date.now(),m});save()};
+   try{await tx('f','readwrite',s=>s.put(ab,k))}catch(e){return alert('تعذر حفظ التسجيل (ممكن المساحة خلصت)')}(dd.au=dd.au||[]).push({k,pg,t:Date.now(),m});if(dd===S.d)save();else dbPut(dd).catch(()=>{})};
   MR.start();b.textContent='⏹ إيقاف التسجيل';$('#mn').style.color='#ef4444'}catch(e){alert('مفيش إذن للميكروفون')}};
 // ---- OCR ----
 const _pt=ptxt;ptxt=async function(i){const o=S.d.oc&&S.d.oc[i];if(!o)return _pt(i);if(S.tc[i])return S.tc[i];const v=(await S.pdf.getPage(i+1)).getViewport({scale:1}),T={s:'',mi:[],mo:[],it:[],w:v.width,h:v.height};
@@ -307,7 +305,7 @@ const _pl3=plR;plR=function(){if(tab!=='toc')return _pl3();const b=$('#plb');b.i
  loadToc().then(T=>{if(tab!=='toc')return;b.innerHTML='';
   if(!T){const q=E('p');q.textContent=S.pdf?'الملف ده مفيهوش فهرس مدمج.':'الفهرس للـPDF بس.';b.append(q);return}
   const walk=(L,dp)=>L.forEach(it=>{const d=E('div','hi');d.style.cssText='border-color:var(--acc);margin-right:'+Math.min(dp,5)*14+'px';d.textContent=it.title||'—';
-   d.onclick=async()=>{const r=await destInfo(it.dest);if(!r){if(it.url&&await inkConfirm('فتح الرابط؟\n'+it.url))open(it.url,'_blank');return}$('#pl').hidden=true;jumpTo(r,true)};b.append(d);it.items&&it.items.length&&walk(it.items,dp+1)});
+   d.onclick=async()=>{const r=await destInfo(it.dest);if(!r){if(it.url&&await inkConfirm('فتح الرابط؟\n'+it.url))open(it.url,'_blank','noopener');return}$('#pl').hidden=true;jumpTo(r,true)};b.append(d);it.items&&it.items.length&&walk(it.items,dp+1)});
   walk(T,0)})};
 // ---- clickable links inside the PDF (hand tool, tap) ----
 async function loadLinks(i){const el=S.pg[i];if(!el||el.lk!==undefined||!S.pdf)return;el.lk=null;
@@ -316,7 +314,7 @@ async function loadLinks(i){const el=S.pg[i];if(!el||el.lk!==undefined||!S.pdf)r
    return{x0:Math.min(x0,x1),y0:Math.min(y0,y1),x1:Math.max(x0,x1),y1:Math.max(y0,y1),dest:a.dest,url:a.url||a.unsafeUrl,act:a.action}})}catch(e){el.lk=[]}}
 const _bt=buildTl;buildTl=function(i){loadLinks(i);return _bt(i)};
 async function followLink(h,i){if(h.dest){const r=await destInfo(h.dest);r&&jumpTo(r,true);return}
- if(h.url){if(await inkConfirm('فتح الرابط؟\n'+h.url))open(h.url,'_blank');return}
+ if(h.url){if(await inkConfirm('فتح الرابط؟\n'+h.url))open(h.url,'_blank','noopener');return}
  const n={NextPage:i+1,PrevPage:i-1,FirstPage:0,LastPage:S.pg.length-1}[h.act];if(n!=null&&S.pg[n])jumpTo({i:n,y:null},true)}
 let tpk=null;
 $('#sc').addEventListener('pointerdown',e=>{tpk=e.isPrimary&&NV()?{x:e.clientX,y:e.clientY,t:Date.now()}:null},true);
@@ -348,7 +346,7 @@ async function chatSend(){const i=$('#cqi'),q=i.value.trim();if(!q||AICH.busy||!
   const lim=sc==='all'?60000:15000;let ctx='';for(const n of idx){const t=await pgText(n);if(t)ctx+='[ص'+(n+1)+'] '+t+'\n';if(ctx.length>lim){ctx=ctx.slice(0,lim);break}}
   const sys=AISYS+' استخدم نص الملف التالي كمرجع، ولو الإجابة مش فيه قول كده بوضوح وجاوب من معلوماتك العامة مع التنبيه. لو مفيش نص مستخرج قول إن الصفحة سكان ولازم OCR.\n--- نص الملف ---\n'+(ctx||'(مفيش نص مستخرج)');
   const r=await aiChat([...AICH.h.slice(-8),{role:'user',content:q}],sys);
-  if(r==null){w.textContent='اتلغى (محتاج مفتاح Gemini)'}else{w.textContent=r;AICH.h.push({role:'user',content:q},{role:'assistant',content:r})}
+  if(r==null){w.textContent='اتلغى (محتاج توافق على استخدام الخدمة)'}else{w.textContent=r;AICH.h.push({role:'user',content:q},{role:'assistant',content:r})}
  }catch(e){w.textContent='خطأ: '+e.message}AICH.busy=0}
 $('#aq').onclick=chatOpen;$('#m-ch').onclick=()=>{$('#mm').hidden=true;chatOpen()};$('#p-ch').onclick=()=>{closePm();chatOpen()};
 const _od=openDoc;openDoc=async function(id){const r=await _od(id);$('#aq').hidden=!(S.d&&S.d.k==='pdf');const c=$('#cq');c&&(c.hidden=true);return r};
@@ -407,7 +405,7 @@ SC.addEventListener('pointerup',e=>{const q=tq;tq=null;if(!q||!S.d||S.pd||PN)ret
  if(HS){e.stopImmediatePropagation();const p=HS.i;HS=null;rdPg(p);updSA()}},true);
 // ---- ترجمة سريعة (جوجل + MyMemory احتياطي) ----
 const isAr=t=>(t.match(/[\u0600-\u06FF]/g)||[]).length>t.replace(/\s/g,'').length*.4;
-const TMO=()=>window.AbortSignal&&AbortSignal.timeout?{signal:AbortSignal.timeout(6000)}:{};
+const TMO=()=>window.AbortSignal&&AbortSignal.timeout?{signal:AbortSignal.timeout(4500)}:{};
 async function gtr(q,tl){const r=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+tl+'&dt=t&dt=bd&q='+encodeURIComponent(q),TMO());if(!r.ok)throw Error('g'+r.status);const j=await r.json();return{t:(j[0]||[]).map(x=>x&&x[0]||'').join('').trim(),d:Array.isArray(j[1])?j[1]:[]}}
 async function mmtr(q,tl){const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(q.slice(0,450))+'&langpair=Autodetect|'+tl,TMO()),j=await r.json(),t=j&&j.responseData&&j.responseData.translatedText;if(!t||/INVALID|QUERY LENGTH|MYMEMORY/i.test(t))throw Error('mm');return{t,d:[]}}
 // ---- offline translation (opus-mt via transformers.js; models are bundled in the APK) ----
@@ -420,13 +418,13 @@ async function offTr(q,tl){const key=tl==='ar'?'en-ar':'ar-en',p=await offPipe(k
  const parts=[];let cur='';q.split(/(?<=[.!?؟\n])\s+/).forEach(x=>{if((cur+' '+x).length>350&&cur){parts.push(cur);cur=x}else cur=cur?cur+' '+x:x});if(cur)parts.push(cur);
  let out=[];for(const t of parts){const r=await p(pre+t,{max_new_tokens:256});out.push((r&&r[0]&&r[0].translation_text||'').trim())}
  return{t:out.join(' ').trim(),d:[]}}
-const tr1=async(q,tl)=>{if(navigator.onLine!==false){try{const r=await gtr(q,tl);if(r.t)return r}catch(e){}try{return await mmtr(q,tl)}catch(e){}}return offTr(q,tl)};
+const tr1=async(q,tl)=>{if(navigator.onLine!==false&&await inkNetOk()){try{const r=await gtr(q,tl);if(r.t)return r}catch(e){}try{return await mmtr(q,tl)}catch(e){}}return offTr(q,tl)};
 let trK=0,trR=null,trTx='';
 function placeCard(r){const b=$('#trb'),h=b.offsetHeight,H=innerHeight,t0=56;b.style.bottom='';
  let y=t0;if(r&&r.bottom!=null){y=r.top>H/2?r.top-h-10:r.bottom+10}else y=t0;b.style.top=Math.max(t0,Math.min(y,H-h-8))+'px'}
 async function inkTr(text,rect){text=(text||'').replace(/\s+/g,' ').trim();if(!text)return;const k=++trK,tl=isAr(text)?'en':'ar',b=$('#trb'),W=$('#trw');trR=rect||null;trTx='';
  $('#trt').textContent=text.length>160?text.slice(0,160)+'…':text;$('#trs').textContent='⏳ …';W.innerHTML='';b.hidden=false;placeCard(trR);
- let r;try{r=await tr1(text.slice(0,1500),tl)}catch(e){if(k===trK){$('#trs').textContent='تعذّرت الترجمة. جرّب تاني.';const g=E('button');g.textContent='فتح في Google Translate';g.onclick=()=>open('https://translate.google.com/?sl=auto&tl='+tl+'&op=translate&text='+encodeURIComponent(text),'_blank');W.append(g);placeCard(trR)}return}
+ let r;try{r=await tr1(text.slice(0,1500),tl)}catch(e){if(k===trK){$('#trs').textContent='تعذّرت الترجمة. جرّب تاني.';const g=E('button');g.textContent='فتح في Google Translate';g.onclick=()=>open('https://translate.google.com/?sl=auto&tl='+tl+'&op=translate&text='+encodeURIComponent(text),'_blank','noopener');W.append(g);placeCard(trR)}return}
  if(k!==trK)return;trTx=r.t;$('#trs').textContent=r.t;
  if(r.d.length){r.d.forEach(e=>{const d=E('div','trd'),p=E('i'),s=E('span');p.textContent=e[0]||'';s.textContent=(e[1]||[]).slice(0,6).join('، ');d.append(p,s);W.append(d)})}
  else if(text.length<220){const ws=[...new Set(text.split(/\s+/).map(w=>w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,'')).filter(w=>w.length>2))].slice(0,8);
