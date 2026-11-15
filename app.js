@@ -5,7 +5,9 @@ pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/p
 const DB=new Promise(r=>{const q=indexedDB.open('inkpad',1);q.onupgradeneeded=()=>{q.result.createObjectStore('d',{keyPath:'id'});q.result.createObjectStore('f')};q.onsuccess=()=>r(q.result)});
 const tx=async(st,m,f)=>{const db=await DB;return new Promise((ok,no)=>{const t=db.transaction(st,m),r=f(t.objectStore(st));t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>no(t.error)})};
 const dbPut=d=>tx('d','readwrite',s=>s.put(d));
-const S={t:'pen',c:'#1e40af',w:3,z:1,fit:1,sh:'line',und:[],red:[],pg:[]},W=595,H=842;
+const S={t:'pen',lp:'pen',c:'#1e40af',w:3,z:1,fit:1,sh:'line',und:[],red:[],pg:[]},W=595,H=842;
+// NV = وضع التحكم في الشاشة بس (من غير أداة) أو وضع تحديد النص
+const NV=()=>S.t==='hand'||S.t==='th',PENT=['pen','hl','lz','er'];
 // ---------- home ----------
 const SZ=()=>{try{return JSON.parse(localStorage.getItem('inksz')||'{}')}catch(e){return{}}},
 SO=()=>{try{return localStorage.getItem('inkso')||'u'}catch(e){return'u'}},
@@ -73,7 +75,7 @@ function ds(c,o,k){c.save();c.lineCap=c.lineJoin='round';c.strokeStyle=c.fillSty
  else{c.font=o.w*k+'px sans-serif';c.textBaseline='top';o.s.split('\n').forEach((t,j)=>c.fillText(t,X(0),Y(0)+j*o.w*k*1.25))}
  c.restore()}
 function ink(i){const el=S.pg[i],c=el.ink.getContext('2d'),k=el.ink.width/el.dim[0];c.clearRect(0,0,el.ink.width,el.ink.height);
- (S.d.s[i]||[]).forEach(o=>ds(c,o,k));if(el.cur)ds(c,el.cur,k);el.lz&&el.lz.length&&lzd(c,el,k);LS.r(c,el,k)}
+ (S.d.s[i]||[]).forEach(o=>ds(c,o,k));if(el.cur)ds(c,el.cur,k);el.lz&&el.lz.length&&lzd(c,el,k);LS.r(c,el,k);window.HSR&&HSR(c,el,k)}
 // ---------- drawing ----------
 const pt=(e,el)=>{const r=el.getBoundingClientRect();return[(e.clientX-r.left)/S.z,(e.clientY-r.top)/S.z,e.pointerType==='pen'&&e.pressure?+e.pressure.toFixed(2):.5]};
 function sp(o){if(o.t==='im')return[0,1,2,3,4].flatMap(u=>[0,1,2,3,4].map(v=>[o.p[0][0]+o.w*u/4,o.p[0][1]+o.h*v/4]));if(o.t==='hr')return o.rs.flatMap(r=>[0,1,2,3,4].map(k=>[r[0]+r[2]*k/4,r[1]+r[3]/2]));const p=o.p;if(o.t==='pen'||o.t==='hl'||o.t==='tx')return p;const[a,b]=p,r=[],L=(u,v)=>{for(let k=0;k<=10;k++)r.push([u[0]+(v[0]-u[0])*k/10,u[1]+(v[1]-u[1])*k/10])};
@@ -81,7 +83,7 @@ function sp(o){if(o.t==='im')return[0,1,2,3,4].flatMap(u=>[0,1,2,3,4].map(v=>[o.
  else{const cx=(a[0]+b[0])/2,cy=(a[1]+b[1])/2,rx=Math.abs(b[0]-a[0])/2,ry=Math.abs(b[1]-a[1])/2;for(let k=0;k<32;k++){const t=k/32*6.283;r.push([cx+rx*Math.cos(t),cy+ry*Math.sin(t)])}}return r}
 function era(el,p){const l=S.d.s[el.i]||[],r=8+S.w*2;for(let j=l.length-1;j>=0;j--)if(sp(l[j]).some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<r))el.er.push(...l.splice(j,1));ink(el.i)}
 function bind(el){const c=el.ink;
- c.onpointerdown=e=>{if(S.t==='hand'||!e.isPrimary||S.po&&e.pointerType==='touch')return;e.preventDefault();const p=SN(pt(e,el)),i=el.i;if(S.t==='ls'){c.setPointerCapture(e.pointerId);el.dn=1;LS.d(el,p);return}
+ c.onpointerdown=e=>{if(NV()||!e.isPrimary||S.po&&e.pointerType==='touch')return;e.preventDefault();const p=SN(pt(e,el)),i=el.i;if(S.t==='ls'){c.setPointerCapture(e.pointerId);el.dn=1;LS.d(el,p);return}
   if(S.t==='mv'){const l=S.d.s[i]||[];let h=null;for(let j=l.length-1;j>=0&&!h;j--)if(sp(l[j]).some(q=>Math.hypot(q[0]-p[0],q[1]-p[1])<14))h=l[j];if(h){el.mo={o:h,p0:p,sv:JSON.stringify(h)};c.setPointerCapture(e.pointerId);el.dn=1}return}
   if(S.t==='lz'){const o={c:S.c,w:S.w,p:[p],end:0};(el.lz=el.lz||[]).push(o);el.lo=o;c.setPointerCapture(e.pointerId);el.dn=1;lzLoop();return}
   if(S.t==='tx'){inkAsk('اكتب النص:').then(s=>{if(s)add(i,{t:'tx',c:S.c,w:S.w*4+8,p:[p],s})});return}
@@ -101,7 +103,7 @@ function bind(el){const c=el.ink;
   else if(el.cur){const o=el.cur;el.cur=null;if(o.t==='pen'&&o.p.length>8&&Date.now()-(el.lt||0)>550)snap(o);add(el.i,o)}}}
 function add(i,o){(S.d.s[i]=S.d.s[i]||[]).push(o);push({a:'add',i,o:[o]})}
 function push(a){S.und.push(a);S.red=[];ink(a.i);save()}
-function apply(a,inv){const l=S.d.s[a.i]=S.d.s[a.i]||[];
+function apply(a,inv){if(a.a==='col'){a.o.forEach(o=>o.c=inv?a.f:a.t);ink(a.i);save();return}const l=S.d.s[a.i]=S.d.s[a.i]||[];
  if((a.a==='add')===inv)a.o.forEach(o=>{const x=l.indexOf(o);if(x>=0)l.splice(x,1)});else l.push(...a.o);ink(a.i);save()}
 $('#un').onclick=()=>{const a=S.und.pop();if(a){apply(a,true);S.red.push(a)}};
 $('#re').onclick=()=>{const a=S.red.pop();if(a){apply(a,false);S.und.push(a)}};
@@ -109,8 +111,9 @@ let st;function save(){clearTimeout(st);st=setTimeout(flush,600)}
 function flush(){clearTimeout(st);if(!S.d||$('#ed').hidden)return;S.d.u=Date.now();return dbPut(S.d)}
 document.addEventListener('visibilitychange',()=>document.hidden&&flush());
 // ---------- tools / zoom ----------
-function sync(){document.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===S.t));$('#ed').classList.toggle('dr',S.t!=='hand')}
-document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{S.t=b.dataset.t;sync()});
+function sync(){document.querySelectorAll('[data-t]').forEach(b=>b.classList.toggle('on',b.dataset.t===S.t));$('#ed').classList.toggle('dr',!NV())}
+// الأدوات اللي في الشنطة: الضغط تاني على الأداة الشغالة بيرجّع التحكم في الشاشة بس. أدوات القلم (الشريط الفرعي) بتبدّل بس.
+document.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=b.dataset.t;if(b.closest('.sbar')){S.t=t;PENT.includes(t)&&(S.lp=t)}else S.t=S.t===t?'hand':t;sync()});
 $('#shs').onchange=e=>{S.sh=e.target.value;S.t='sh';sync()};
 $('#wd').oninput=e=>S.w=+e.target.value;
 const cl=$('#cl');
@@ -211,21 +214,21 @@ home();
 
 // ---------- text layer (select / copy / highlight) ----------
 const mc=document.createElement('canvas').getContext('2d');
-async function buildTl(i){const el=S.pg[i];if(S.t!=='hand'||!S.pdf||!el||el.tl||el.tb)return;el.tb=1;await new Promise(r=>setTimeout(r,200));el.tb=0;if(!el.r||el.tl)return;const T=await ptxt(i);if(el.tl||!el.r)return;
+async function buildTl(i){const el=S.pg[i];if(!NV()||!S.pdf||!el||el.tl||el.tb)return;el.tb=1;await new Promise(r=>setTimeout(r,200));el.tb=0;if(!el.r||el.tl)return;const T=await ptxt(i);if(el.tl||!el.r)return;
  const d=E('div','tl'),fr=document.createDocumentFragment();d.style.cssText='width:'+T.w+'px;height:'+T.h+'px;transform:scale('+S.z+')';
  let ci=0;for(const t of T.it){if(!t.str.trim())continue;mc.font=t.h+'px sans-serif';const w=mc.measureText(t.str).width,x=w&&t.w?t.w/w:1,s=E('span');s.textContent=t.str;
   s.style.cssText='left:'+t.x+'px;top:'+(t.y-t.h*.82)+'px;font-size:'+t.h+'px;transform-origin:0 82%;transform:rotate('+Math.atan2(t.dy,t.dx)+'rad) scaleX('+(isFinite(x)&&x>0?x:1)+')';fr.append(s);if(++ci%400===0){await new Promise(r=>requestAnimationFrame(r));if(!el.r||el.tl)return}}
  d.append(fr);el.insertBefore(d,el.ink);el.tl=d}
-const hs=()=>{const s=getSelection();return S.t==='hand'&&s&&!s.isCollapsed&&$('#pgs').contains(s.anchorNode)?s:null};
-document.addEventListener('selectionchange',()=>{$('#sa').hidden=!hs()});
+const hs=()=>{const s=getSelection();return NV()&&s&&!s.isCollapsed&&$('#pgs').contains(s.anchorNode)?s:null};
+document.addEventListener('selectionchange',()=>{window.updSA&&updSA()});
 $('#sa').addEventListener('pointerdown',e=>e.preventDefault());
-$('#cp').onclick=()=>{const s=hs();if(s)navigator.clipboard.writeText(s.toString()).then(()=>{$('#cp').textContent='✓';setTimeout(()=>$('#cp').textContent='📋 نسخ',900)})};
-document.querySelectorAll('#sa [data-h]').forEach(b=>b.onclick=()=>{const s=hs();if(!s)return;const by={};
+// تظليل النص المحدد بلون معيّن (بيتنادى من شريط الألوان)
+function mkHl(c){const s=hs();if(!s)return;const by={};
  for(const r of s.getRangeAt(0).getClientRects()){if(r.width<2||r.height>60)continue;const cx=r.left+r.width/2,cy=r.top+r.height/2;
   const i=S.pg.findIndex(el=>{const q=el.getBoundingClientRect();return cx>=q.left&&cx<=q.right&&cy>=q.top&&cy<=q.bottom});if(i<0)continue;
   const q=S.pg[i].getBoundingClientRect(),u=[(r.left-q.left)/S.z,(r.top-q.top)/S.z,r.width/S.z,r.height/S.z];
   if(!(by[i]=by[i]||[]).some(v=>Math.abs(v[0]-u[0])<1&&Math.abs(v[1]-u[1])<1&&Math.abs(v[2]-u[2])<2))by[i].push(u)}
- const tt=s.toString();let f1=1;for(const i in by){add(+i,{t:'hr',c:b.dataset.h,rs:by[i],tx:f1?tt:''});f1=0}s.removeAllRanges()});
+ const tt=s.toString();let f1=1;for(const i in by){add(+i,{t:'hr',c,rs:by[i],tx:f1?tt:''});f1=0}s.removeAllRanges()}
 // ---------- toolbar position ----------
 const lg=()=>{try{return localStorage.getItem('inkpos')}catch(e){}};
 function pos(){const L=lg()==='L';$('#ed').classList.toggle('L',L);$('#tp').textContent=L?'⬇':'⬅'}
@@ -246,7 +249,7 @@ async function th(d){const i=d.i,c=d.c,k=c.width/S.pg[i].dim[0],x=c.getContext('
 function plR(){const b=$('#plb');b.innerHTML='';b.classList.toggle('l',tab==='hl');document.querySelectorAll('#plh [data-p]').forEach(x=>x.classList.toggle('on',x.dataset.p===tab));
  if(tab==='hl'){const L=[];S.pg.forEach((_,i)=>(S.d.s[i]||[]).forEach(o=>o.t==='hr'&&o.tx&&o.tx.trim()&&L.push([i,o])));
   const cb=E('button');cb.textContent='📋 نسخ الكل ('+L.length+')';cb.onclick=()=>navigator.clipboard.writeText(L.map(([i,o])=>'• '+o.tx.trim()+' (ص'+(i+1)+')').join('\n\n'));b.append(cb);
-  if(!L.length){const p=E('p');p.textContent='حدّد نص بـ✋ واضغط لون هايلايت، وهيتجمع هنا.';b.append(p)}
+  if(!L.length){const p=E('p');p.textContent='حدّد نص بزر 🖍 واضغط لون هايلايت، وهيتجمع هنا.';b.append(p)}
   L.forEach(([i,o])=>{const d=E('div','hi');d.style.borderColor=o.c;d.textContent=o.tx.trim()+' — ص'+(i+1);d.onclick=()=>go2(i);b.append(d)});return}
  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){io.unobserve(e.target);th(e.target)}}),{root:b}),bm=S.d.bm||[];
  S.pg.forEach((el,i)=>{if(tab==='bm'&&!bm.includes(i))return;const d=E('div','th'),c=E('canvas'),s=E('span','st');d.i=i;d.c=c;c.width=220;c.height=Math.round(220*el.dim[1]/el.dim[0]);
@@ -292,8 +295,6 @@ $('#m-nt').onclick=()=>{S.d.nt=!S.d.nt;$('#ed').classList.toggle('nt',S.d.nt);sa
 let tmI=0;$('#m-tm').onclick=()=>{$('#mm').hidden=true;const t=$('#tmr');if(tmI){clearInterval(tmI);tmI=0;t.hidden=true;return}const end=Date.now()+25*60000;t.hidden=false;
  tmI=setInterval(()=>{const s=Math.max(0,Math.round((end-Date.now())/1000));t.textContent='⏱ '+String(s/60|0).padStart(2,'0')+':'+String(s%60).padStart(2,'0');if(!s){clearInterval(tmI);tmI=0;t.hidden=true;navigator.vibrate&&navigator.vibrate([300,100,300]);alert('خلصت 25 دقيقة. خد استراحة 5 دقايق')}},500)};
 $('#tmr').onclick=()=>$('#m-tm').click();
-$('#tr').onclick=()=>{const s=hs();s&&open('https://translate.google.com/?sl=auto&tl=ar&op=translate&text='+encodeURIComponent(s.toString()),'_blank')};
-$('#ai').onclick=()=>{const s=hs();s&&open('https://claude.ai/new?q='+encodeURIComponent('اشرح لي بشكل مبسط:\n'+s.toString()),'_blank')};
 $('#mgf').onchange=e=>{const fs=[...e.target.files];e.target.value='';if(fs.length<2)return alert('اختار ملفين PDF على الأقل');mergeUI(fs)};
 // شاشة ترتيب الملفات قبل الدمج
 function mergeUI(fs){const old=$('#mgo');if(old)old.remove();let L=fs.slice();
