@@ -22,17 +22,27 @@ const _sy=sync;sync=()=>{_sy();S.t!=='ls'&&LS.sel.length&&LS.x()};
 const tg=(id,k,t)=>$(id).onclick=()=>{S[k]=!S[k];$(id).textContent=t+': '+(S[k]?'شغال':'إيقاف');$(id).classList.toggle('on',S[k])};
 tg('#m-rl','rl','📏 مسطرة (خط مستقيم)');tg('#m-gs','gs','🔲 محاذاة للشبكة');
 // ---- AI ----
-const KEY=()=>{try{return localStorage.getItem('inkkey')||''}catch(e){return''}};
+const AIC={u:'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions',m:'gemini-flash-latest',k:''};
+const aiCfg=()=>{try{return Object.assign({},AIC,JSON.parse(localStorage.getItem('inkai')||'{}'))}catch(e){return{...AIC}}};
 const showAI=t=>{$('#aib').textContent=t;$('#air').hidden=false};
 $('#aix').onclick=()=>$('#air').hidden=true;$('#aic').onclick=()=>navigator.clipboard.writeText($('#aib').textContent);
-async function ai(p){let k=KEY();if(!k){k=((await inkAsk('الصق مفتاح Anthropic API (بيتخزن على جهازك بس):'))||'').trim();if(!k)return null;try{localStorage.setItem('inkkey',k)}catch(e){}}
- const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-haiku-5-5',max_tokens:1500,system:'أنت مساعد مذاكرة لطالب علاج طبيعي. أجب بالعربية المصرية المبسطة وخلّي المصطلحات الطبية بالإنجليزية. كن مختصرًا.',messages:[{role:'user',content:p}]})});
- const j=await r.json();if(!r.ok)throw Error(j.error&&j.error.message||r.status);return j.content.map(c=>c.text||'').join('')}
-$('#ai').onclick=async()=>{const s=hs();if(!s)return;const t=s.toString();if(!KEY())return open('https://claude.ai/new?q='+encodeURIComponent('اشرح لي بشكل مبسط:\n'+t),'_blank');
- showAI('⏳ …');try{showAI(await ai('اشرح بشكل مبسط:\n'+t))}catch(e){showAI('خطأ: '+e.message)}};
+const AISYS='أنت مساعد مذاكرة لطالب علاج طبيعي. أجب بالعربية المصرية المبسطة وخلّي المصطلحات الطبية بالإنجليزية. كن مختصرًا.';
+async function aiChat(msgs,sys){const c=aiCfg(),h={'content-type':'application/json'};
+ if(!c.k){const k=((await inkAsk('الصق مفتاح Gemini المجاني (من aistudio.google.com/apikey) — بيتخزن على جهازك بس:'))||'').trim();if(!k)return null;c.k=k;try{localStorage.setItem('inkai',JSON.stringify(c))}catch(x){}}
+ h.authorization='Bearer '+c.k;
+ const r=await fetch(c.u,{method:'POST',headers:h,body:JSON.stringify({model:c.m,max_tokens:4000,messages:[{role:'system',content:sys||AISYS},...msgs]})});
+ let j;try{j=await r.json()}catch(x){throw Error('رد غير مفهوم ('+r.status+')')}
+ if(!r.ok)throw Error(j.error&&(j.error.message||j.error)||(Array.isArray(j)&&j[0]&&j[0].error&&j[0].error.message)||r.status);
+ const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;if(!t)throw Error('رد فاضي');return t}
+async function ai(p,sys){return aiChat([{role:'user',content:p}],sys)}
+$('#ai').onclick=async()=>{const s=hs();if(!s)return;const t=s.toString();
+ showAI('⏳ …');try{const r=await ai('اشرح بشكل مبسط:\n'+t);r?showAI(r):$('#air').hidden=true}catch(e){showAI('خطأ: '+e.message)}};
 $('#m-sm').onclick=async()=>{$('#mm').hidden=true;if(!S.pdf)return alert('التلخيص للـPDF بس');const T=await ptxt(S.cp||0),t=T.it.map(x=>x.str).join(' ').trim();if(!t)return alert('الصفحة مفيهاش نص. جرّب OCR الأول');
  showAI('⏳ …');try{const r=await ai('لخّص النص ده في نقاط قصيرة:\n'+t.slice(0,12000));r?showAI(r):$('#air').hidden=true}catch(e){showAI('خطأ: '+e.message)}};
-$('#m-ky').onclick=async()=>{const k=await inkAsk('مفتاح Anthropic API (فاضي = مسح):',KEY());if(k===null)return;try{localStorage.setItem('inkkey',k.trim())}catch(e){}};
+$('#m-ky').onclick=async()=>{$('#mm').hidden=true;const c=aiCfg();let v=await inkAsk('رابط مزوّد AI (متوافق مع OpenAI):',c.u);if(v===null)return;c.u=v.trim()||AIC.u;
+ v=await inkAsk('اسم المودل:',c.m);if(v===null)return;c.m=v.trim()||AIC.m;
+ v=await inkAsk('مفتاح Gemini (فاضي = مسح):',c.k);if(v===null)return;c.k=v.trim();
+ try{localStorage.setItem('inkai',JSON.stringify(c))}catch(x){}};
 // ---- flashcards ----
 const cz=t=>{const w=t.split(/\s+/).filter(x=>x.length>3).sort((a,b)=>b.length-a.length)[0];return w?t.replace(w,'＿＿＿＿'):t};
 const hls=()=>{const L=[];S.pg.forEach((_,i)=>(S.d.s[i]||[]).forEach(o=>o.t==='hr'&&o.tx&&o.tx.trim().length>8&&L.push([i,o.tx.trim()])));return L};
@@ -50,9 +60,9 @@ const _pl=plR;plR=function(){if(tab!=='fc'&&tab!=='au')return _pl();const b=$('#
   p.onclick=async()=>{const f=await tx('f','readonly',s=>s.get(r.k));cur&&cur.pause();cur=new Audio(URL.createObjectURL(new Blob([f],{type:r.m})));cur.play()};
   x.onclick=async()=>{if(!await inkConfirm('حذف التسجيل؟'))return;await tx('f','readwrite',s=>s.delete(r.k));S.d.au.splice(j,1);save();plR()};b.append(d)})};
 // ---- audio recording ----
-let MR=null,CH=[];$('#m-rc').onclick=async()=>{const b=$('#m-rc');if(MR){MR.stop();return}
- try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),pg=S.cp||0;MR=new MediaRecorder(st);CH=[];MR.ondataavailable=e=>CH.push(e.data);
-  MR.onstop=async()=>{st.getTracks().forEach(t=>t.stop());const m=MR.mimeType||'audio/webm',ab=await new Blob(CH,{type:m}).arrayBuffer(),k='a'+Date.now();MR=null;b.textContent='🎙 تسجيل صوت';$('#mn').style.color='';
+let MR=null,CHT=[];$('#m-rc').onclick=async()=>{const b=$('#m-rc');if(MR){MR.stop();return}
+ try{const st=await navigator.mediaDevices.getUserMedia({audio:true}),pg=S.cp||0;MR=new MediaRecorder(st);CHT=[];MR.ondataavailable=e=>CHT.push(e.data);
+  MR.onstop=async()=>{st.getTracks().forEach(t=>t.stop());const m=MR.mimeType||'audio/webm',ab=await new Blob(CHT,{type:m}).arrayBuffer(),k='a'+Date.now();MR=null;b.textContent='🎙 تسجيل صوت';$('#mn').style.color='';
    await tx('f','readwrite',s=>s.put(ab,k));(S.d.au=S.d.au||[]).push({k,pg,t:Date.now(),m});save()};
   MR.start();b.textContent='⏹ إيقاف التسجيل';$('#mn').style.color='#ef4444'}catch(e){alert('مفيش إذن للميكروفون')}};
 // ---- OCR ----
@@ -232,3 +242,81 @@ apply(get());
 const b=q('#m-th');b&&b.addEventListener('click',()=>{const t=get()==='light'?'dark':'light';try{localStorage.setItem(K,t)}catch(e){}apply(t)});
 })();
 
+// ================= v20: TOC, links, search list, AI chat, AI highlights =================
+const closePm=()=>{$('#pm').hidden=true;$('#tmb').classList.remove('open')};
+const pgText=async i=>{const T=await ptxt(i);return T.it.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim()};
+// ---- destinations / jumping ----
+async function destInfo(dest){try{if(typeof dest==='string')dest=await S.pdf.getDestination(dest);if(!Array.isArray(dest)||!dest.length)return null;
+ const r=dest[0];const i=typeof r==='number'?r:await S.pdf.getPageIndex(r);if(!(i>=0&&i<S.pg.length))return null;
+ let y=null;const m=dest[1]&&dest[1].name;
+ if(m==='XYZ'||m==='FitH'||m==='FitBH'){const t=m==='XYZ'?dest[3]:dest[2];if(typeof t==='number'){const p=await S.pdf.getPage(i+1),v=p.getViewport({scale:1});y=v.convertToViewportPoint(m==='XYZ'?(dest[2]||0):0,t)[1];if(!(y>=0&&y<=v.height))y=null}}
+ return{i,y}}catch(e){return null}}
+function showBack(){let b=$('#bkj');if(!b){b=E('button','', '↩ رجوع للمكان السابق');b.id='bkj';b.onclick=()=>{const sc=$('#sc');S.bk&&sc.scrollTo(S.bk.l,S.bk.t);b.hidden=true};document.body.append(b)}
+ b.hidden=false;clearTimeout(b.t);b.t=setTimeout(()=>b.hidden=true,15000)}
+function jumpTo(d,back){const sc=$('#sc'),el=S.pg[d.i];if(!el)return;if(back)S.bk={t:sc.scrollTop,l:sc.scrollLeft};
+ const r=el.getBoundingClientRect(),s=sc.getBoundingClientRect();sc.scrollTop+=r.top-s.top+(d.y!=null?Math.max(0,d.y*S.z-40):0);back&&showBack()}
+// ---- table of contents tab ----
+async function loadToc(){if(!S.pdf)return null;if(S.pdf._t!==undefined)return S.pdf._t;let o=null;try{o=await S.pdf.getOutline()}catch(e){}S.pdf._t=o&&o.length?o:null;return S.pdf._t}
+const _pl3=plR;plR=function(){if(tab!=='toc')return _pl3();const b=$('#plb');b.innerHTML='';b.classList.add('l');document.querySelectorAll('#plh [data-p]').forEach(x=>x.classList.toggle('on',x.dataset.p===tab));
+ const p=E('p');p.textContent='⏳ …';b.append(p);
+ loadToc().then(T=>{if(tab!=='toc')return;b.innerHTML='';
+  if(!T){const q=E('p');q.textContent=S.pdf?'الملف ده مفيهوش فهرس مدمج.':'الفهرس للـPDF بس.';b.append(q);return}
+  const walk=(L,dp)=>L.forEach(it=>{const d=E('div','hi');d.style.cssText='border-color:var(--acc);margin-right:'+Math.min(dp,5)*14+'px';d.textContent=it.title||'—';
+   d.onclick=async()=>{const r=await destInfo(it.dest);if(!r){if(it.url&&await inkConfirm('فتح الرابط؟\n'+it.url))open(it.url,'_blank');return}$('#pl').hidden=true;jumpTo(r,true)};b.append(d);it.items&&it.items.length&&walk(it.items,dp+1)});
+  walk(T,0)})};
+// ---- clickable links inside the PDF (hand tool, tap) ----
+async function loadLinks(i){const el=S.pg[i];if(!el||el.lk!==undefined||!S.pdf)return;el.lk=null;
+ try{const p=await S.pdf.getPage(i+1),v=p.getViewport({scale:1}),an=await p.getAnnotations();
+  el.lk=an.filter(a=>a.subtype==='Link'&&a.rect&&(a.dest||a.url||a.unsafeUrl||a.action)).map(a=>{const[x0,y0,x1,y1]=v.convertToViewportRectangle(a.rect);
+   return{x0:Math.min(x0,x1),y0:Math.min(y0,y1),x1:Math.max(x0,x1),y1:Math.max(y0,y1),dest:a.dest,url:a.url||a.unsafeUrl,act:a.action}})}catch(e){el.lk=[]}}
+const _bt=buildTl;buildTl=function(i){loadLinks(i);return _bt(i)};
+async function followLink(h,i){if(h.dest){const r=await destInfo(h.dest);r&&jumpTo(r,true);return}
+ if(h.url){if(await inkConfirm('فتح الرابط؟\n'+h.url))open(h.url,'_blank');return}
+ const n={NextPage:i+1,PrevPage:i-1,FirstPage:0,LastPage:S.pg.length-1}[h.act];if(n!=null&&S.pg[n])jumpTo({i:n,y:null},true)}
+let tpk=null;
+$('#sc').addEventListener('pointerdown',e=>{tpk=e.isPrimary&&S.t==='hand'?{x:e.clientX,y:e.clientY,t:Date.now()}:null},true);
+$('#sc').addEventListener('pointerup',e=>{const k=tpk;tpk=null;if(!k||S.pd||PN)return;if(Math.hypot(e.clientX-k.x,e.clientY-k.y)>10||Date.now()-k.t>400)return;if(getSelection().toString())return;
+ const i=S.pg.findIndex(el=>{const q=el.getBoundingClientRect();return e.clientX>=q.left&&e.clientX<=q.right&&e.clientY>=q.top&&e.clientY<=q.bottom});if(i<0)return;
+ const el=S.pg[i];if(!el.lk||!el.lk.length)return;const q=el.getBoundingClientRect(),x=(e.clientX-q.left)/S.z,y=(e.clientY-q.top)/S.z,g=2;
+ const h=el.lk.find(l=>x>=l.x0-g&&x<=l.x1+g&&y>=l.y0-g&&y<=l.y1+g);if(!h)return;e.stopPropagation();followLink(h,i)},true);
+// ---- search results list ----
+$('#sl').onclick=()=>{if(!S.sr||!S.sr.length)return alert('اعمل بحث الأول');
+ const old=$('#srl');old&&old.remove();const o=E('div','ov','<div class="ph"><b></b><button class="x">✕</button></div><div class="ob"></div>');o.id='srl';
+ o.querySelector('b').textContent='🔍 '+S.lq+' — '+S.sr.length+' نتيجة';const b=o.querySelector('.ob');
+ S.sr.slice(0,500).forEach((r,n)=>{const T=S.tc[r.i],j=Math.max(0,T.mi[r.k]);const d=E('div','hi');d.style.borderColor='#f97316';
+  const s=T.it.slice(Math.max(0,j-1),j+2).map(x=>x.str).join(' ').replace(/\s+/g,' ').trim();d.textContent='ص'+(r.i+1)+' — '+s.slice(0,200);d.onclick=()=>{o.remove();go(n)};b.append(d)});
+ if(S.sr.length>500){const p=E('p');p.textContent='معروض أول 500 نتيجة بس.';b.append(p)}
+ o.querySelector('.x').onclick=()=>o.remove();document.body.append(o)};
+// ---- AI chat about the file ----
+const AICH={h:[],busy:0,id:''};
+function addMsg(c,t){const m=E('div','cm '+c);m.textContent=t;const b=$('#cqb');b.append(m);b.scrollTop=b.scrollHeight;return m}
+function chatOpen(){if(!S.pdf)return alert('الشات للـPDF بس');let o=$('#cq');
+ if(!o){o=E('div','ov','<div class="ph"><b>💬 اسأل عن الملف</b><select id="cqs"><option value="1">الصفحة الحالية</option><option value="3">٣ صفحات حواليها</option><option value="all">الملف كله (مقتطع)</option></select><button class="x">✕</button></div><div class="ob" id="cqb"></div><div class="cqc"><button>📝 لخّص</button><button>🧒 اشرح ببساطة</button><button>❓ اعملّي أسئلة مراجعة</button></div><div id="cqf"><textarea id="cqi" rows="1" placeholder="اسأل عن الصفحة…" dir="auto"></textarea><button class="btn p" id="cqg">إرسال</button></div>');
+  o.id='cq';document.body.append(o);o.querySelector('.x').onclick=()=>o.hidden=true;$('#cqg').onclick=chatSend;
+  const qs=['لخّص الصفحة دي في نقاط قصيرة','اشرح الصفحة دي ببساطة','اعملّي 5 أسئلة مراجعة مع إجاباتها من الصفحة دي'];
+  o.querySelectorAll('.cqc button').forEach((b,n)=>b.onclick=()=>{$('#cqi').value=qs[n];chatSend()});
+  $('#cqi').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&innerWidth>700){e.preventDefault();chatSend()}}}
+ if(AICH.id!==S.d.id){AICH.id=S.d.id;AICH.h=[];$('#cqb').innerHTML='';addMsg('a','اسألني أي حاجة عن الصفحة اللي واقف عندها 👇')}
+ o.hidden=false;$('#cqi').focus()}
+async function chatSend(){const i=$('#cqi'),q=i.value.trim();if(!q||AICH.busy||!S.pdf)return;i.value='';addMsg('u',q);AICH.busy=1;const w=addMsg('a','⏳ …');
+ try{const sc=$('#cqs').value,cp=S.cp||0;let idx=sc==='all'?[...S.pg.keys()]:sc==='3'?[cp-1,cp,cp+1].filter(n=>n>=0&&n<S.pg.length):[cp];
+  const lim=sc==='all'?60000:15000;let ctx='';for(const n of idx){const t=await pgText(n);if(t)ctx+='[ص'+(n+1)+'] '+t+'\n';if(ctx.length>lim){ctx=ctx.slice(0,lim);break}}
+  const sys=AISYS+' استخدم نص الملف التالي كمرجع، ولو الإجابة مش فيه قول كده بوضوح وجاوب من معلوماتك العامة مع التنبيه. لو مفيش نص مستخرج قول إن الصفحة سكان ولازم OCR.\n--- نص الملف ---\n'+(ctx||'(مفيش نص مستخرج)');
+  const r=await aiChat([...AICH.h.slice(-8),{role:'user',content:q}],sys);
+  if(r==null){w.textContent='اتلغى (محتاج مفتاح Gemini)'}else{w.textContent=r;AICH.h.push({role:'user',content:q},{role:'assistant',content:r})}
+ }catch(e){w.textContent='خطأ: '+e.message}AICH.busy=0}
+$('#aq').onclick=chatOpen;$('#m-ch').onclick=()=>{$('#mm').hidden=true;chatOpen()};$('#p-ch').onclick=()=>{closePm();chatOpen()};
+const _od=openDoc;openDoc=async function(id){const r=await _od(id);$('#aq').hidden=!(S.d&&S.d.k==='pdf');const c=$('#cq');c&&(c.hidden=true);return r};
+// ---- AI picks the important sentences and highlights them ----
+function locate(T,ph){const q=NM(ph.trim()).replace(/ +/g,' ').trim();if(q.length<6)return null;let a=T.s.indexOf(q);if(a>=0)return[a,a+q.length];
+ const w=q.split(' ');if(w.length<4)return null;const mx=Math.min(4,w.length>>1);let h='';a=-1;for(let k=mx;k>=2&&a<0;k--){h=w.slice(0,k).join(' ');a=T.s.indexOf(h)}if(a<0)return null;
+ for(let k=mx;k>=2;k--){const t=w.slice(-k).join(' '),b=T.s.indexOf(t,a+h.length);if(b>=0&&b+t.length-a<=q.length*1.6+30)return[a,b+t.length]}return null}
+async function aiHl(){$('#mm').hidden=true;closePm();if(!S.pdf)return alert('التحديد بالـAI للـPDF بس');const i=S.cp||0,T=await ptxt(i),raw=T.it.map(x=>x.str).join(' ').replace(/\s+/g,' ').trim();
+ if(raw.length<40)return alert('الصفحة مفيهاش نص كفاية. جرّب OCR الأول');showAI('⏳ الـAI بيحدد المهم في ص'+(i+1)+'…');
+ try{const r=await ai('ده نص صفحة من كتاب دراسي. اختار أهم الجمل أو أجزاء الجمل اللي الطالب لازم يعمللها هايلايت (تعريفات، أسباب، علامات، علاج، أرقام مهمة). من 3 لـ 8 اختيارات، كل واحد بين 4 و30 كلمة، وانسخه حرفيًا زي ما هو في النص بدون أي تغيير أو ترجمة. رجّع JSON array فقط من نصوص، بدون أي كلام تاني.\n\n'+raw.slice(0,12000));
+  if(r==null){$('#air').hidden=true;return}
+  let L;try{L=JSON.parse(r.match(/\[[\s\S]*\]/)[0])}catch(x){throw Error('رد الـAI مش مفهوم، جرّب تاني')}
+  let n=0;for(const ph of L){if(typeof ph!=='string')continue;const m=locate(T,ph);if(!m)continue;const rs=rects(T,m[0],m[1]).map(q=>[q.x,q.y,q.w,q.h]);if(!rs.length)continue;add(i,{t:'hr',c:'#facc15',rs,tx:ph.trim()});n++}
+  showAI(n?'✅ حدّدت '+n+' جملة مهمة في ص'+(i+1)+'. تقدر تمسحها بزرار التراجع ↩ (واحدة واحدة).':'ماقدرتش ألاقي الجمل دي في نص الصفحة (غالبًا تنسيقها معقد). جرّب تاني.')}
+ catch(e){showAI('خطأ: '+e.message)}}
+$('#m-hl').onclick=aiHl;$('#p-hl').onclick=aiHl;

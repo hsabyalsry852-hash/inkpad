@@ -118,9 +118,15 @@ function pc(){cl.querySelectorAll('.sw').forEach(b=>b.classList.toggle('on',b.da
 ['#1e40af','#dc2626','#16a34a','#111827','#facc15','#9333ea'].forEach(c=>{const b=E('button','sw');b.style.background=c;b.dataset.c=c;b.onclick=()=>{S.c=c;$('#co').value=c;pc()};cl.append(b)});
 $('#co').oninput=e=>{S.c=e.target.value;pc()};pc();sync();
 const vis=el=>{const a=el.getBoundingClientRect(),b=$('#sc').getBoundingClientRect();return a.bottom>b.top-600&&a.top<b.bottom+600};
-function zoom(z,A){z=Math.max(S.fit*.5,Math.min(S.fit*3,z));const sc=$('#sc'),o=S.z,rx=(sc.scrollLeft+sc.clientWidth/2)/sc.scrollWidth,ry=(sc.scrollTop+sc.clientHeight/2)/sc.scrollHeight;
+// نقطة ارتكاز ثابتة (رقم الصفحة + نسبة جواها) عشان التكبير/التصغير ما يزحّفش الصفحة
+function pgAnchor(fx,fy){const sc=$('#sc'),sr=sc.getBoundingClientRect();let best=0,bd=1e9;
+ S.pg.forEach((el,i)=>{const r=el.getBoundingClientRect(),t=r.top-sr.top+sc.scrollTop,b=t+r.height,d=fy<t?t-fy:fy>b?fy-b:0;if(d<bd){bd=d;best=i}});
+ const r=S.pg[best].getBoundingClientRect(),t=r.top-sr.top+sc.scrollTop,l=r.left-sr.left+sc.scrollLeft;return{i:best,u:(fy-t)/r.height,v:(fx-l)/r.width}}
+function zoom(z,A){z=Math.max(S.fit*.5,Math.min(S.fit*3,z));const sc=$('#sc');if(!S.pg.length)return;
+ const cx=A?A.cx:sc.clientWidth/2,cy=A?A.cy:sc.clientHeight/2,fx=A?A.fx:sc.scrollLeft+cx,fy=A?A.fy:sc.scrollTop+cy,an=pgAnchor(fx,fy);
  S.z=z;S.pg.forEach(el=>{el.style.width=el.dim[0]*z+'px';el.style.height=el.dim[1]*z+'px';el.r=null;el.tl&&(el.tl.style.transform='scale('+z+')')});S.d.zr=z/S.fit;save();
- if(A){const r=z/o;sc.scrollLeft=A.fx*r-A.cx;sc.scrollTop=A.fy*r-A.cy}else{sc.scrollLeft=rx*sc.scrollWidth-sc.clientWidth/2;sc.scrollTop=ry*sc.scrollHeight-sc.clientHeight/2}
+ const sr=sc.getBoundingClientRect(),r=S.pg[an.i].getBoundingClientRect(),t=r.top-sr.top+sc.scrollTop,l=r.left-sr.left+sc.scrollLeft;
+ sc.scrollTop=t+an.u*r.height-cy;sc.scrollLeft=l+an.v*r.width-cx;
  S.pg.forEach(el=>vis(el)&&rp(el.i))}
 $('#zi').onclick=()=>zoom(S.z*1.25);$('#zo').onclick=()=>zoom(S.z/1.25);
 const dist=e=>Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
@@ -185,7 +191,7 @@ function clearHl(){document.querySelectorAll('.sh').forEach(e=>e.remove())}
 async function find(q){const tok=S.stk=(S.stk||0)+1;clearHl();S.sr=[];S.si=-1;S.lq=q;const nq=NM(q.trim()).replace(/ +/g,' '),cn=$('#cnt');
  if(!nq){cn.textContent='';return}let any=0;
  for(let i=0;i<S.pg.length;i++){if(tok!==S.stk)return;cn.textContent='…'+(i+1)+'/'+S.pg.length;const T=await ptxt(i);if(T.s.trim())any=1;
-  let k=0;while((k=T.s.indexOf(nq,k))>=0){const rs=rects(T,k,k+nq.length),els=rs.map(r=>{const d=E('div','sh');d.style.cssText='left:'+r.x/r.W*100+'%;top:'+r.y/r.H*100+'%;width:'+r.w/r.W*100+'%;height:'+r.h/r.H*100+'%';S.pg[i].append(d);return d});S.sr.push({i,els});k+=nq.length}}
+  let k=0;while((k=T.s.indexOf(nq,k))>=0){const rs=rects(T,k,k+nq.length),els=rs.map(r=>{const d=E('div','sh');d.style.cssText='left:'+r.x/r.W*100+'%;top:'+r.y/r.H*100+'%;width:'+r.w/r.W*100+'%;height:'+r.h/r.H*100+'%';S.pg[i].append(d);return d});S.sr.push({i,els,k});k+=nq.length}}
  if(!S.sr.length){cn.textContent=any?'0':'مفيش نص';return}go(0)}
 function go(n){const L=S.sr.length;if(!L)return;S.sr.forEach(r=>r.els.forEach(e=>e.classList.remove('cur')));S.si=(n+L)%L;const r=S.sr[S.si];r.els.forEach(e=>e.classList.add('cur'));
  $('#cnt').textContent=(S.si+1)+'/'+L;r.els[0].scrollIntoView({block:'center',inline:'center'})}

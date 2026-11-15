@@ -264,3 +264,15 @@ input[type=range]{accent-color:var(--acc)}
 .it>button .i{width:19px;height:19px}
 .em{grid-column:1/-1;text-align:center;padding:36px 16px;margin:6px 0 0;border:1.5px dashed var(--line);border-radius:20px;line-height:1.8}
 .em::before{content:"📂";display:block;font-size:40px;margin-bottom:8px}
+
+/* v20: zoom anchor, search list, back pill, AI chat */
+#sc,#pgs{overflow-anchor:none}
+#sl{flex:none}
+#bkj{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));z-index:11;background:var(--acc);color:var(--on-acc);border-color:var(--acc);border-radius:20px;padding:9px 16px;box-shadow:0 6px 18px #0007;direction:rtl}
+#cq .ob{display:flex;flex-direction:column;gap:8px}
+.cm{padding:10px 12px;border-radius:14px;max-width:92%;white-space:pre-wrap;line-height:1.7;font-size:15px;user-select:text;-webkit-user-select:text}
+.cm.u{align-self:flex-start;background:var(--acc);color:var(--on-acc)}
+.cm.a{align-self:flex-end;background:var(--card);color:var(--fg)}
+.cqc{display:flex;gap:6px;padding:6px 10px;overflow-x:auto}.cqc button{flex:none;padding:6px 10px;font-size:13px}
+#cqf{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);align-items:flex-end}
+#cqf textarea{flex:1;min-width:0;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:10px;font-size:15px;font-family:inherit;resize:none;max-height:120px}
