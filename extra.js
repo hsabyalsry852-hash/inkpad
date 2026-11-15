@@ -27,12 +27,11 @@ const aiCfg=()=>{try{return Object.assign({},AIC,JSON.parse(localStorage.getItem
 const showAI=t=>{$('#aib').textContent=t;$('#air').hidden=false};
 $('#aix').onclick=()=>$('#air').hidden=true;$('#aic').onclick=()=>navigator.clipboard.writeText($('#aib').textContent);
 const AISYS='أنت مساعد مذاكرة لطالب علاج طبيعي. أجب بالعربية المصرية المبسطة وخلّي المصطلحات الطبية بالإنجليزية. كن مختصرًا.';
-async function aiChat(msgs,sys){const c=aiCfg(),h={'content-type':'application/json'};
- if(!c.k){const k=((await inkAsk('الصق مفتاح Gemini المجاني (من aistudio.google.com/apikey) — بيتخزن على جهازك بس:'))||'').trim();if(!k)return null;c.k=k;try{localStorage.setItem('inkai',JSON.stringify(c))}catch(x){}}
- h.authorization='Bearer '+c.k;
- const r=await fetch(c.u,{method:'POST',headers:h,body:JSON.stringify({model:c.m,max_tokens:4000,messages:[{role:'system',content:sys||AISYS},...msgs]})});
- let j;try{j=await r.json()}catch(x){throw Error('رد غير مفهوم ('+r.status+')')}
- if(!r.ok)throw Error(j.error&&(j.error.message||j.error)||(Array.isArray(j)&&j[0]&&j[0].error&&j[0].error.message)||r.status);
+async function aiChat(msgs,sys){const c=aiCfg(),h={'content-type':'application/json'},fr=!c.k;
+ const u=fr?'https://text.pollinations.ai/openai':c.u,md=fr?'openai':c.m;fr||(h.authorization='Bearer '+c.k);
+ let r,j;try{r=await fetch(u,{method:'POST',headers:h,body:JSON.stringify({model:md,max_tokens:4000,messages:[{role:'system',content:sys||AISYS},...msgs]})})}catch(x){throw Error(fr?'تعذر الاتصال بالخدمة المجانية (ممكن تكون واقفة). جرّب بعدين أو حط مفتاح من ⚙ إعدادات AI':'مفيش اتصال')}
+ try{j=await r.json()}catch(x){throw Error(fr?'الخدمة المجانية رجّعت رد مش مفهوم ('+r.status+'). ممكن تكون محتاجة مفتاح دلوقتي.':'رد غير مفهوم ('+r.status+')')}
+ if(!r.ok)throw Error((j.error&&(j.error.message||j.error))||(Array.isArray(j)&&j[0]&&j[0].error&&j[0].error.message)||(fr?'الخدمة المجانية رفضت الطلب ('+r.status+'). ممكن تكون محتاجة مفتاح.':r.status));
  const t=j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;if(!t)throw Error('رد فاضي');return t}
 async function ai(p,sys){return aiChat([{role:'user',content:p}],sys)}
 $('#ai').onclick=async()=>{const s=hs();if(!s)return;const t=s.toString();
@@ -41,7 +40,7 @@ $('#m-sm').onclick=async()=>{$('#mm').hidden=true;if(!S.pdf)return alert('الت
  showAI('⏳ …');try{const r=await ai('لخّص النص ده في نقاط قصيرة:\n'+t.slice(0,12000));r?showAI(r):$('#air').hidden=true}catch(e){showAI('خطأ: '+e.message)}};
 $('#m-ky').onclick=async()=>{$('#mm').hidden=true;const c=aiCfg();let v=await inkAsk('رابط مزوّد AI (متوافق مع OpenAI):',c.u);if(v===null)return;c.u=v.trim()||AIC.u;
  v=await inkAsk('اسم المودل:',c.m);if(v===null)return;c.m=v.trim()||AIC.m;
- v=await inkAsk('مفتاح Gemini (فاضي = مسح):',c.k);if(v===null)return;c.k=v.trim();
+ v=await inkAsk('مفتاح Gemini (اختياري. فاضي = استخدام الخدمة المجانية من غير مفتاح):',c.k);if(v===null)return;c.k=v.trim();
  try{localStorage.setItem('inkai',JSON.stringify(c))}catch(x){}};
 // ---- flashcards ----
 const cz=t=>{const w=t.split(/\s+/).filter(x=>x.length>3).sort((a,b)=>b.length-a.length)[0];return w?t.replace(w,'＿＿＿＿'):t};
