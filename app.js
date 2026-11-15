@@ -94,7 +94,7 @@ function era(el,p){const l=S.d.s[el.i]||[],r=8+S.w*2;for(let j=l.length-1;j>=0;j
 function bind(el){const c=el.ink;
  c.onpointerdown=e=>{if(NV()||!e.isPrimary||S.po&&e.pointerType==='touch')return;e.preventDefault();const p=SN(pt(e,el)),i=el.i;if(S.t==='ls'){c.setPointerCapture(e.pointerId);el.dn=1;LS.d(el,p);return}
   if(S.t==='mv'){const l=S.d.s[i]||[];let h=null;for(let j=l.length-1;j>=0&&!h;j--)if(hitO(l[j],p,14))h=l[j];if(h){el.mo={o:h,p0:p,sv:JSON.stringify(h)};c.setPointerCapture(e.pointerId);el.dn=1}return}
-  if(S.t==='lz'){const o={c:S.c,w:S.w,p:[p],end:0};(el.lz=el.lz||[]).push(o);el.lo=o;c.setPointerCapture(e.pointerId);el.dn=1;lzLoop();return}
+  if(S.t==='lz'){const o={c:S.c,w:S.w,p:[p],end:0,d:(S.lzT||7)*1000};(el.lz=el.lz||[]).push(o);el.lo=o;c.setPointerCapture(e.pointerId);el.dn=1;lzLoop();return}
   if(S.t==='tx'){inkAsk('اكتب النص:').then(s=>{if(s)add(i,{t:'tx',c:S.c,w:S.w*4+8,p:[p],s})});return}
   if(S.t==='er'){el.er=[];era(el,p)}
   else el.cur={t:S.t==='sh'?S.sh:S.t,c:S.c,w:S.w,p:S.t==='sh'?[p,p]:[p]};
@@ -244,10 +244,14 @@ const lg=()=>{try{return localStorage.getItem('inkpos')}catch(e){}};
 function pos(){const L=lg()==='L';$('#ed').classList.toggle('L',L);$('#tp').textContent=L?'⬇':'⬅'}
 $('#tp').onclick=()=>{try{localStorage.setItem('inkpos',lg()==='L'?'B':'L')}catch(e){}pos()};pos();
 
-// ---------- laser pen (fades after 7s) ----------
+// ---------- laser pen (مدة الاختفاء بتتسأل كل مرة تختار الليزر) ----------
+function lzAsk(){const old=$('#lzq');old&&old.remove();const cur=S.lzT||7;
+ const o=E('div','lzq');o.id='lzq';o.innerHTML='<div class="lzb"><b>الليزر يفضل قد إيه قبل ما يختفي؟</b><div class="lzr">'+[3,5,7,10].map(n=>'<button data-s="'+n+'"'+(n===cur?' class="on"':'')+'>'+n+' ثواني</button>').join('')+'</div></div>';
+ o.onclick=e=>{const b=e.target.closest('[data-s]');if(b)S.lzT=+b.dataset.s;if(b||e.target===o)o.remove()};document.body.append(o)}
+document.querySelectorAll('[data-t="lz"]').forEach(b=>b.addEventListener('click',lzAsk));
 let lzR=0;
-function lzLoop(){if(lzR)return;lzR=1;const f=()=>{const n=Date.now();let al=0;S.pg.forEach(el=>{if(!el.lz||!el.lz.length)return;el.lz=el.lz.filter(o=>!o.end||n-o.end<7000);al+=el.lz.length;ink(el.i)});if(al)requestAnimationFrame(f);else lzR=0};requestAnimationFrame(f)}
-function lzd(c,el,k){const n=Date.now();el.lz.forEach(o=>{const a=o.end?Math.min(1,(7000-(n-o.end))/1500):1;if(a<=0)return;c.save();c.globalAlpha=a;c.lineCap=c.lineJoin='round';c.beginPath();
+function lzLoop(){if(lzR)return;lzR=1;const f=()=>{const n=Date.now();let al=0;S.pg.forEach(el=>{if(!el.lz||!el.lz.length)return;el.lz=el.lz.filter(o=>!o.end||n-o.end<(o.d||7000));al+=el.lz.length;ink(el.i)});if(al)requestAnimationFrame(f);else lzR=0};requestAnimationFrame(f)}
+function lzd(c,el,k){const n=Date.now();el.lz.forEach(o=>{const a=o.end?Math.min(1,((o.d||7000)-(n-o.end))/Math.min(1500,o.d||7000)):1;if(a<=0)return;c.save();c.globalAlpha=a;c.lineCap=c.lineJoin='round';c.beginPath();
  o.p.forEach((q,j)=>j?c.lineTo(q[0]*k,q[1]*k):c.moveTo(q[0]*k,q[1]*k));if(o.p.length===1)c.lineTo(o.p[0][0]*k+.1,o.p[0][1]*k);
  c.shadowColor=o.c;c.shadowBlur=16*k;c.strokeStyle=o.c;c.lineWidth=(o.w+3)*k;c.stroke();c.shadowBlur=0;c.strokeStyle='#fff';c.lineWidth=Math.max(1,o.w*.45)*k;c.stroke();c.restore()})}
 // ---------- pages / bookmarks / highlights panel ----------

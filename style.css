@@ -386,3 +386,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 .pg{isolation:isolate}
 .pg canvas.hlc{mix-blend-mode:multiply;pointer-events:none}
 #ed.nt .pg canvas.hlc{mix-blend-mode:normal;opacity:.6}
+
+/* laser duration picker */
+#lzq{position:fixed;inset:0;z-index:60;background:#0006;display:flex;align-items:flex-end;justify-content:center;padding:0 12px calc(90px + env(safe-area-inset-bottom));direction:rtl}
+#lzq .lzb{background:var(--bar);border:1px solid var(--line);border-radius:16px;padding:14px;width:100%;max-width:420px;box-shadow:0 8px 30px var(--shadow);text-align:center}
+#lzq .lzr{display:flex;gap:8px;margin-top:12px}#lzq .lzr button{flex:1;padding:12px 4px;font-size:15px}
