@@ -116,21 +116,163 @@ jobs:
               }
           }
           EOF
+          cat > native/InkLockPlugin.java <<'EOF'
+          package com.inkpad.app;
+
+          import android.app.Activity;
+          import android.content.pm.PackageManager;
+          import android.hardware.biometrics.BiometricManager;
+          import android.hardware.biometrics.BiometricPrompt;
+          import android.os.Build;
+          import android.os.CancellationSignal;
+
+          import com.getcapacitor.JSObject;
+          import com.getcapacitor.Plugin;
+          import com.getcapacitor.PluginCall;
+          import com.getcapacitor.PluginMethod;
+          import com.getcapacitor.annotation.CapacitorPlugin;
+
+          import java.util.concurrent.atomic.AtomicBoolean;
+
+          /** Fingerprint / face unlock using the framework BiometricPrompt (Android 9+). No extra dependency. */
+          @CapacitorPlugin(name = "InkLock")
+          public class InkLockPlugin extends Plugin {
+
+              private boolean canUse() {
+                  if (Build.VERSION.SDK_INT < 28) return false;
+                  try {
+                      if (Build.VERSION.SDK_INT >= 30) {
+                          BiometricManager bm = getContext().getSystemService(BiometricManager.class);
+                          return bm != null && bm.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_WEAK)
+                                  == BiometricManager.BIOMETRIC_SUCCESS;
+                      }
+                      if (Build.VERSION.SDK_INT >= 29) {
+                          BiometricManager bm = getContext().getSystemService(BiometricManager.class);
+                          return bm != null && bm.canAuthenticate() == BiometricManager.BIOMETRIC_SUCCESS;
+                      }
+                      return getContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_FINGERPRINT);
+                  } catch (Exception e) {
+                      return false;
+                  }
+              }
+
+              private static JSObject res(boolean ok, String err) {
+                  JSObject r = new JSObject();
+                  r.put("ok", ok);
+                  if (err != null) r.put("error", err);
+                  return r;
+              }
+
+              @PluginMethod
+              public void available(PluginCall call) {
+                  call.resolve(res(canUse(), null));
+              }
+
+              @PluginMethod
+              public void authenticate(final PluginCall call) {
+                  if (!canUse()) {
+                      call.resolve(res(false, "unavailable"));
+                      return;
+                  }
+                  final Activity a = getActivity();
+                  final String title = call.getString("title", "InkPad");
+                  final String sub = call.getString("subtitle", "");
+                  final AtomicBoolean done = new AtomicBoolean(false);
+                  a.runOnUiThread(() -> {
+                      try {
+                          BiometricPrompt.Builder b = new BiometricPrompt.Builder(a)
+                                  .setTitle(title)
+                                  .setNegativeButton("استخدم الرقم السري", a.getMainExecutor(), (d, w) -> {
+                                      if (done.compareAndSet(false, true)) call.resolve(res(false, "cancel"));
+                                  });
+                          if (sub != null && !sub.isEmpty()) b.setSubtitle(sub);
+                          if (Build.VERSION.SDK_INT >= 30) {
+                              b.setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_WEAK);
+                          }
+                          b.build().authenticate(new CancellationSignal(), a.getMainExecutor(),
+                                  new BiometricPrompt.AuthenticationCallback() {
+                                      @Override
+                                      public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                                          if (done.compareAndSet(false, true)) call.resolve(res(true, null));
+                                      }
+
+                                      @Override
+                                      public void onAuthenticationError(int code, CharSequence msg) {
+                                          if (done.compareAndSet(false, true)) call.resolve(res(false, String.valueOf(msg)));
+                                      }
+                                  });
+                      } catch (Exception e) {
+                          if (done.compareAndSet(false, true)) call.resolve(res(false, String.valueOf(e.getMessage())));
+                      }
+                  });
+              }
+          }
+          EOF
           mkdir -p native
           cat > native/MainActivity.java <<'EOF'
           package com.inkpad.app;
 
           import android.content.Intent;
+          import android.os.Build;
           import android.os.Bundle;
+          import android.os.Handler;
+          import android.os.Looper;
+          import android.view.ActionMode;
 
           import androidx.activity.OnBackPressedCallback;
 
           import com.getcapacitor.BridgeActivity;
 
           public class MainActivity extends BridgeActivity {
+
+              // The app draws its own selection bar (colors / translate / copy), so hide Android's floating
+              // text toolbar (Copy / Web search / Google Translate ...) while text is selected in the PDF.
+              // It stays visible when the cursor is in an input box so paste keeps working.
+              private ActionMode selMode;
+              private final Handler selH = new Handler(Looper.getMainLooper());
+              private final Runnable selHide = new Runnable() {
+                  @Override
+                  public void run() {
+                      final ActionMode m = selMode;
+                      if (m == null) return;
+                      try {
+                          getBridge().getWebView().evaluateJavascript(
+                              "(function(){var a=document.activeElement;return !!(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable))})()",
+                              value -> {
+                                  if (m != selMode || "true".equals(value)) return;
+                                  try {
+                                      m.getMenu().clear();
+                                      if (Build.VERSION.SDK_INT >= 23) m.hide(3000);
+                                  } catch (Exception ignored) {}
+                              });
+                      } catch (Exception ignored) {}
+                      selH.postDelayed(this, 2000);
+                  }
+              };
+
+              @Override
+              public void onActionModeStarted(ActionMode mode) {
+                  super.onActionModeStarted(mode);
+                  if (Build.VERSION.SDK_INT >= 23 && mode.getType() == ActionMode.TYPE_FLOATING) {
+                      selMode = mode;
+                      selH.removeCallbacks(selHide);
+                      selH.post(selHide);
+                  }
+              }
+
+              @Override
+              public void onActionModeFinished(ActionMode mode) {
+                  super.onActionModeFinished(mode);
+                  if (mode == selMode) {
+                      selMode = null;
+                      selH.removeCallbacks(selHide);
+                  }
+              }
+
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   registerPlugin(InkOpenPlugin.class);
+                  registerPlugin(InkLockPlugin.class);
                   super.onCreate(savedInstanceState);
                   InkOpenPlugin.handle(this, getIntent());
 
@@ -213,7 +355,7 @@ jobs:
           # removes the service worker (the APK already ships the files) and injects native.js.
           set -euo pipefail
           rm -rf www && mkdir -p www/lib
-          cp index.html app.js extra.js style.css manifest.json icon-192.png icon-512.png www/
+          cp index.html app.js extra.js plus.js style.css manifest.json icon-192.png icon-512.png www/
           B=https://cdnjs.cloudflare.com/ajax/libs
           curl -fsSL $B/pdf.js/3.11.174/pdf.min.js        -o www/lib/pdf.min.js
           curl -fsSL $B/pdf.js/3.11.174/pdf.worker.min.js -o www/lib/pdf.worker.min.js
@@ -258,7 +400,7 @@ jobs:
           # 1) Java files
           d = f'{root}/java/com/inkpad/app'
           os.makedirs(d, exist_ok=True)
-          for f in ('MainActivity.java', 'InkOpenPlugin.java'):
+          for f in ('MainActivity.java', 'InkOpenPlugin.java', 'InkLockPlugin.java'):
               shutil.copy(f'native/{f}', f'{d}/{f}')
 
           # 2) "Open with" + "Share" for PDFs
@@ -277,6 +419,8 @@ jobs:
                           <data android:mimeType="application/pdf" />
                       </intent-filter>
           '''
+          if 'USE_BIOMETRIC' not in s:
+              s = s.replace('<application', '<uses-permission android:name="android.permission.USE_BIOMETRIC" />\n    <application', 1)
           assert '</activity>' in s
           s = s.replace('</activity>', filters + '        </activity>', 1)
           open(p, 'w', encoding='utf-8').write(s)
