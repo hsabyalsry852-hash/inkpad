@@ -68,9 +68,12 @@ let MR=null,CHT=[];$('#m-rc').onclick=async()=>{const b=$('#m-rc');if(MR){MR.sto
 const _pt=ptxt;ptxt=async function(i){const o=S.d.oc&&S.d.oc[i];if(!o)return _pt(i);if(S.tc[i])return S.tc[i];const v=(await S.pdf.getPage(i+1)).getViewport({scale:1}),T={s:'',mi:[],mo:[],it:[],w:v.width,h:v.height};
  o.forEach(([str,x,y,w,h])=>{const j=T.it.length;T.it.push({str,x,y:y+h*.82,dx:1,dy:0,ux:0,uy:-1,w,h,n:str.length,ar:/[\u0590-\u08FF\uFB1D-\uFEFF]/.test(str)});let k=0;for(const c0 of str){for(const c of NM(c0)){T.s+=c;T.mi.push(j);T.mo.push(k)}k++}T.s+=' ';T.mi.push(-1);T.mo.push(0)});return S.tc[i]=T};
 $('#m-ocr').onclick=async()=>{if(!S.pdf)return alert('OCR للـPDF بس');const b=$('#m-ocr'),i=S.cp||0,el=S.pg[i];b.disabled=true;
- try{if(!window.Tesseract)await new Promise((r,x)=>{const s=E('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';s.onload=r;s.onerror=()=>x(Error('محتاج إنترنت'));document.head.append(s)});
+ try{const TB=new URL('lib/tess/',location.href).href;
+  const ld=u=>new Promise((r,x)=>{const t=E('script');t.src=u;t.onload=r;t.onerror=()=>x(Error('محتاج إنترنت'));document.head.append(t)});
+  if(!window.Tesseract){try{await ld(TB+'tesseract.min.js');window._tessLocal=true}catch(e){await ld('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js')}}
   const k=2,c=E('canvas');c.width=el.dim[0]*k;c.height=el.dim[1]*k;await bgDraw(i,c.getContext('2d'),k);
-  const r=await Tesseract.recognize(c,'ara+eng',{logger:m=>b.textContent='🔎 '+Math.round((m.progress||0)*100)+'%'});
+  const TO={logger:m=>b.textContent='🔎 '+Math.round((m.progress||0)*100)+'%'};if(window._tessLocal){const TB=new URL('lib/tess/',location.href).href;TO.workerPath=TB+'worker.min.js';TO.corePath=TB;TO.langPath=TB}
+  const r=await Tesseract.recognize(c,'ara+eng',TO);
   (S.d.oc=S.d.oc||{})[i]=r.data.words.filter(w=>w.text.trim()).map(w=>[w.text,w.bbox.x0/k,w.bbox.y0/k,(w.bbox.x1-w.bbox.x0)/k,(w.bbox.y1-w.bbox.y0)/k]);
   S.tc[i]=null;el.tl&&(el.tl.remove(),el.tl=null);buildTl(i);save();alert('تم. جرّب البحث أو تحديد النص في الصفحة دي')}catch(e){alert('فشل OCR: '+e.message)}b.disabled=false;b.textContent='🔎 OCR للصفحة'};
 // ---- page tools (insert / delete / move) ----
@@ -404,15 +407,26 @@ SC.addEventListener('pointerup',e=>{const q=tq;tq=null;if(!q||!S.d||S.pd||PN)ret
  if(HS){e.stopImmediatePropagation();const p=HS.i;HS=null;rdPg(p);updSA()}},true);
 // ---- ترجمة سريعة (جوجل + MyMemory احتياطي) ----
 const isAr=t=>(t.match(/[\u0600-\u06FF]/g)||[]).length>t.replace(/\s/g,'').length*.4;
-async function gtr(q,tl){const r=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+tl+'&dt=t&dt=bd&q='+encodeURIComponent(q));if(!r.ok)throw Error('g'+r.status);const j=await r.json();return{t:(j[0]||[]).map(x=>x&&x[0]||'').join('').trim(),d:Array.isArray(j[1])?j[1]:[]}}
-async function mmtr(q,tl){const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(q.slice(0,450))+'&langpair=Autodetect|'+tl),j=await r.json(),t=j&&j.responseData&&j.responseData.translatedText;if(!t||/INVALID|QUERY LENGTH|MYMEMORY/i.test(t))throw Error('mm');return{t,d:[]}}
-const tr1=async(q,tl)=>{try{const r=await gtr(q,tl);if(r.t)return r}catch(e){}return mmtr(q,tl)};
+const TMO=()=>window.AbortSignal&&AbortSignal.timeout?{signal:AbortSignal.timeout(6000)}:{};
+async function gtr(q,tl){const r=await fetch('https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl='+tl+'&dt=t&dt=bd&q='+encodeURIComponent(q),TMO());if(!r.ok)throw Error('g'+r.status);const j=await r.json();return{t:(j[0]||[]).map(x=>x&&x[0]||'').join('').trim(),d:Array.isArray(j[1])?j[1]:[]}}
+async function mmtr(q,tl){const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(q.slice(0,450))+'&langpair=Autodetect|'+tl,TMO()),j=await r.json(),t=j&&j.responseData&&j.responseData.translatedText;if(!t||/INVALID|QUERY LENGTH|MYMEMORY/i.test(t))throw Error('mm');return{t,d:[]}}
+// ---- offline translation (opus-mt via transformers.js; models are bundled in the APK) ----
+const _otp={};
+function offPipe(key){if(!_otp[key])_otp[key]=(async()=>{const m=await import('./lib/transformers.min.js'),e=m.env;
+ e.allowRemoteModels=false;e.allowLocalModels=true;e.useBrowserCache=false;e.localModelPath=new URL('models/',location.href).href;
+ e.backends.onnx.wasm.wasmPaths=new URL('lib/ort/',location.href).href;e.backends.onnx.wasm.numThreads=1;
+ return m.pipeline('translation','opus-mt-'+key)})().catch(x=>{_otp[key]=null;throw x});return _otp[key]}
+async function offTr(q,tl){const key=tl==='ar'?'en-ar':'ar-en',p=await offPipe(key),pre=tl==='ar'?'>>ara<< ':'';
+ const parts=[];let cur='';q.split(/(?<=[.!?؟\n])\s+/).forEach(x=>{if((cur+' '+x).length>350&&cur){parts.push(cur);cur=x}else cur=cur?cur+' '+x:x});if(cur)parts.push(cur);
+ let out=[];for(const t of parts){const r=await p(pre+t,{max_new_tokens:256});out.push((r&&r[0]&&r[0].translation_text||'').trim())}
+ return{t:out.join(' ').trim(),d:[]}}
+const tr1=async(q,tl)=>{if(navigator.onLine!==false){try{const r=await gtr(q,tl);if(r.t)return r}catch(e){}try{return await mmtr(q,tl)}catch(e){}}return offTr(q,tl)};
 let trK=0,trR=null,trTx='';
 function placeCard(r){const b=$('#trb'),h=b.offsetHeight,H=innerHeight,t0=56;b.style.bottom='';
  let y=t0;if(r&&r.bottom!=null){y=r.top>H/2?r.top-h-10:r.bottom+10}else y=t0;b.style.top=Math.max(t0,Math.min(y,H-h-8))+'px'}
 async function inkTr(text,rect){text=(text||'').replace(/\s+/g,' ').trim();if(!text)return;const k=++trK,tl=isAr(text)?'en':'ar',b=$('#trb'),W=$('#trw');trR=rect||null;trTx='';
  $('#trt').textContent=text.length>160?text.slice(0,160)+'…':text;$('#trs').textContent='⏳ …';W.innerHTML='';b.hidden=false;placeCard(trR);
- let r;try{r=await tr1(text.slice(0,1500),tl)}catch(e){if(k===trK){$('#trs').textContent='تعذّرت الترجمة. تأكد إن في إنترنت وجرّب تاني.';const g=E('button');g.textContent='فتح في Google Translate';g.onclick=()=>open('https://translate.google.com/?sl=auto&tl='+tl+'&op=translate&text='+encodeURIComponent(text),'_blank');W.append(g);placeCard(trR)}return}
+ let r;try{r=await tr1(text.slice(0,1500),tl)}catch(e){if(k===trK){$('#trs').textContent='تعذّرت الترجمة. جرّب تاني.';const g=E('button');g.textContent='فتح في Google Translate';g.onclick=()=>open('https://translate.google.com/?sl=auto&tl='+tl+'&op=translate&text='+encodeURIComponent(text),'_blank');W.append(g);placeCard(trR)}return}
  if(k!==trK)return;trTx=r.t;$('#trs').textContent=r.t;
  if(r.d.length){r.d.forEach(e=>{const d=E('div','trd'),p=E('i'),s=E('span');p.textContent=e[0]||'';s.textContent=(e[1]||[]).slice(0,6).join('، ');d.append(p,s);W.append(d)})}
  else if(text.length<220){const ws=[...new Set(text.split(/\s+/).map(w=>w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}]+$/gu,'')).filter(w=>w.length>2))].slice(0,8);
