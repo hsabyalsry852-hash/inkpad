@@ -72,7 +72,7 @@ $('#m-ocr').onclick=async()=>{if(!S.pdf)return alert('OCR للـPDF بس');const
   const ld=u=>new Promise((r,x)=>{const t=E('script');t.src=u;t.onload=r;t.onerror=()=>x(Error('محتاج إنترنت'));document.head.append(t)});
   if(!window.Tesseract){try{await ld(TB+'tesseract.min.js');window._tessLocal=true}catch(e){await ld('https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js')}}
   const k=2,c=E('canvas');c.width=el.dim[0]*k;c.height=el.dim[1]*k;await bgDraw(i,c.getContext('2d'),k);
-  const TO={logger:m=>b.textContent='🔎 '+Math.round((m.progress||0)*100)+'%'};if(window._tessLocal){const TB=new URL('lib/tess/',location.href).href;TO.workerPath=TB+'worker.min.js';TO.corePath=TB;TO.langPath=TB}
+  const TO={logger:m=>b.textContent='🔎 '+Math.round((m.progress||0)*100)+'%'};if(window._tessLocal){const TB=new URL('lib/tess/',location.href).href;TO.workerPath=TB+'worker.min.js';TO.corePath=TB;TO.langPath=TB;TO.gzip=false}
   const r=await Tesseract.recognize(c,'ara+eng',TO);
   (S.d.oc=S.d.oc||{})[i]=r.data.words.filter(w=>w.text.trim()).map(w=>[w.text,w.bbox.x0/k,w.bbox.y0/k,(w.bbox.x1-w.bbox.x0)/k,(w.bbox.y1-w.bbox.y0)/k]);
   S.tc[i]=null;el.tl&&(el.tl.remove(),el.tl=null);buildTl(i);save();alert('تم. جرّب البحث أو تحديد النص في الصفحة دي')}catch(e){alert('فشل OCR: '+e.message)}b.disabled=false;b.textContent='🔎 OCR للصفحة'};
