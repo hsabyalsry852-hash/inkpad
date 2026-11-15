@@ -70,7 +70,7 @@ const NP=()=>{const C=window.Capacitor;return C&&C.isNativePlatform&&C.isNativeP
 let _av=null;
 const bioAvail=async()=>{if(_av!==null)return _av;const p=NP();if(!p)return _av=false;try{const r=await p.available();return _av=!!(r&&r.ok)}catch(e){return _av=false}};
 let authing=0;
-async function bioAuth(sub){const p=NP();if(!p)return false;authing++;try{const r=await p.authenticate({title:'InkPad',subtitle:sub||'أكّد بالبصمة'});return !!(r&&r.ok)}catch(e){return false}finally{setTimeout(()=>{authing=Math.max(0,authing-1)},600)}}
+async function bioAuth(sub){const p=NP();if(!p)return false;authing++;try{const r=await p.authenticate({title:'A',subtitle:sub||'أكّد بالبصمة'});return !!(r&&r.ok)}catch(e){return false}finally{setTimeout(()=>{authing=Math.max(0,authing-1)},600)}}
 async function hashPin(pin,salt){try{const h=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(salt+':'+pin));return[...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){let h=5381;const s=salt+':'+pin;for(let i=0;i<s.length;i++)h=(h*33^s.charCodeAt(i))>>>0;return'x'+h}}
 async function pbk(pin,salt){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(pin),'PBKDF2',false,['deriveBits']),b=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(salt),iterations:150000,hash:'SHA-256'},k,256);return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 // v:2 = PBKDF2. الأرقام القديمة (SHA-256 بسيط) بتتحدّث لوحدها أول ما تتكتب صح
@@ -125,7 +125,7 @@ window.inkLockToggle=async d=>{if(!LK()){if(!await inkYN('لازم تعمل رق
   return _o.apply(this,arguments)}}
 // قفل التطبيق كله عند الفتح / الرجوع من الخلفية
 async function lockApp(){const L=LK();if(!L||document.getElementById('lkov'))return;document.documentElement.classList.add('locked');
- const bio=!!L.b&&await bioAvail();await pad({title:'InkPad مقفول',bio,cancel:false,check:chkPin});for(const k in UN)delete UN[k]}
+ const bio=!!L.b&&await bioAvail();await pad({title:'A مقفول',bio,cancel:false,check:chkPin});for(const k in UN)delete UN[k]}
 async function relockDoc(){if(document.getElementById('lkov'))return;const ok=await verify({title:'الملف مقفول 🔒',sub:S.d&&S.d.n});if(!ok)$('#bk').click();else if(S.d)UN[S.d.id]=Date.now()}
 let hidT=0;
 document.addEventListener('visibilitychange',()=>{if(document.hidden){hidT=Date.now();return}
@@ -200,4 +200,47 @@ async function compileHl(){$('#mm').hidden=true;if(!S.d||$('#ed').hidden)return;
  for(const i in by){const l=S.d.s[i]||[],rm=by[i].filter(o=>l.includes(o));rm.forEach(o=>l.splice(l.indexOf(o),1));if(rm.length)push({a:'del',i:+i,o:rm})}
  tst('اتحذفت '+L.length+' هايلايت (تقدر تتراجع بزرار ↩)')}
 window.inkCompileHl=compileHl;
+})();
+
+// ================= عدسة مكبّرة + سكرول تلقائي =================
+(()=>{
+const q=s=>document.querySelector(s),ZS=[2,3,4];let zi=0,L=null,tm=0;
+const edHid=()=>{const e=q('#ed');return !e||e.hidden};
+function lensDraw(){if(!L)return;const cv=L.querySelector('canvas'),r=L.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1),w=Math.round(r.width*dpr),h=Math.round(r.height*dpr);
+ if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
+ const x=cv.getContext('2d'),Z=ZS[zi],rw=r.width/Z,rh=r.height/Z,x0=r.left+r.width/2-rw/2,y0=r.top+r.height/2-rh/2,x1=x0+rw,y1=y0+rh;
+ x.save();x.filter='none';x.fillStyle='#fff';x.fillRect(0,0,w,h);x.restore();
+ (S.pg||[]).forEach(el=>{if(!el||!el.getBoundingClientRect)return;const b=el.getBoundingClientRect(),ix0=Math.max(x0,b.left),iy0=Math.max(y0,b.top),ix1=Math.min(x1,b.right),iy1=Math.min(y1,b.bottom);if(ix1<=ix0||iy1<=iy0||!b.width)return;
+  [el.bg,el.hc,el.ink].forEach(c=>{if(!c||!c.width||!c.height)return;const k=c.width/b.width;let f='none';try{f=getComputedStyle(c).filter||'none'}catch(e){}
+   x.save();x.filter=f;try{x.drawImage(c,(ix0-b.left)*k,(iy0-b.top)*k,(ix1-ix0)*k,(iy1-iy0)*k,(ix0-x0)*Z*dpr,(iy0-y0)*Z*dpr,(ix1-ix0)*Z*dpr,(iy1-iy0)*Z*dpr)}catch(e){}x.restore()})})}
+function lensClose(){if(L){L.remove();L=null}clearInterval(tm);const b=q('#u-mg');b&&b.classList.remove('on')}
+function lensOpen(){L=document.createElement('div');L.id='lens';
+ L.innerHTML='<canvas></canvas><div class="lb"><button class="z">×'+ZS[zi]+'</button><button class="x">✕</button></div><div class="lg"></div>';
+ L.style.left=Math.max(8,(innerWidth-Math.min(270,innerWidth-24))/2)+'px';L.style.top=Math.round(innerHeight*.42)+'px';
+ let d=null;L.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return;e.preventDefault();const r=L.getBoundingClientRect();d={x:e.clientX-r.left,y:e.clientY-r.top};L.setPointerCapture(e.pointerId)});
+ L.addEventListener('pointermove',e=>{if(!d)return;L.style.left=Math.max(0,Math.min(innerWidth-L.offsetWidth,e.clientX-d.x))+'px';L.style.top=Math.max(0,Math.min(innerHeight-L.offsetHeight,e.clientY-d.y))+'px';lensDraw()});
+ L.addEventListener('pointerup',()=>{d=null});L.addEventListener('pointercancel',()=>{d=null});
+ L.querySelector('.z').onclick=e=>{zi=(zi+1)%ZS.length;e.target.textContent='×'+ZS[zi];lensDraw()};
+ L.querySelector('.x').onclick=lensClose;
+ document.body.append(L);q('#u-mg').classList.add('on');lensDraw();tm=setInterval(()=>{if(edHid())lensClose();else lensDraw()},120)}
+q('#u-mg').onclick=()=>L?lensClose():lensOpen();
+
+// ---- سكرول تلقائي ----
+const SPD=[8,15,25,40,60,90];let si=2,on=0,pz=0,touch=0,raf=0,last=0,acc=0,bar=null,rt2=0;
+const sc=q('#sc'),mb=q('#m-as');
+function asUi(){if(!bar)return;bar.querySelector('span').textContent='سرعة '+(si+1);bar.querySelector('.pp').textContent=pz?'▶':'⏸'}
+function asStop(){on=0;cancelAnimationFrame(raf);raf=0;bar&&bar.remove();bar=null;mb.textContent='▶ سكرول تلقائي: إيقاف';mb.classList.remove('on')}
+function asLoop(t){if(!on)return;if(edHid()){asStop();return}
+ const dt=Math.min(100,t-(last||t));last=t;
+ if(!pz&&!touch){acc+=SPD[si]*dt/1000;if(acc>=1){const d=Math.floor(acc);acc-=d;const b=sc.scrollTop;sc.scrollTop=b+d;if(sc.scrollTop<=b&&d>0&&b+sc.clientHeight>=sc.scrollHeight-3){asStop();return}}}
+ raf=requestAnimationFrame(asLoop)}
+function asStart(){on=1;pz=0;acc=0;last=0;mb.textContent='⏹ سكرول تلقائي: شغال';mb.classList.add('on');
+ bar=document.createElement('div');bar.id='asb';bar.innerHTML='<button class="m">−</button><span></span><button class="p2">+</button><button class="pp">⏸</button><button class="x">✕</button>';
+ bar.querySelector('.m').onclick=()=>{si=Math.max(0,si-1);asUi()};bar.querySelector('.p2').onclick=()=>{si=Math.min(SPD.length-1,si+1);asUi()};
+ bar.querySelector('.pp').onclick=()=>{pz=!pz;asUi()};bar.querySelector('.x').onclick=asStop;
+ document.body.append(bar);asUi();raf=requestAnimationFrame(asLoop)}
+mb.onclick=()=>{q('#mm').hidden=true;on?asStop():asStart()};
+sc.addEventListener('pointerdown',()=>{touch=1;clearTimeout(rt2)},{capture:true,passive:true});
+['pointerup','pointercancel'].forEach(v=>addEventListener(v,()=>{clearTimeout(rt2);rt2=setTimeout(()=>{touch=0},700)},{passive:true}));
+sc.addEventListener('wheel',()=>{touch=1;clearTimeout(rt2);rt2=setTimeout(()=>{touch=0},900)},{passive:true});
 })();
