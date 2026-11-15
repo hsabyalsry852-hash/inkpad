@@ -44,7 +44,7 @@ async function openDoc(id){const my=S.ot=(S.ot||0)+1;const d=await tx('d','reado
  S.io=new IntersectionObserver(es=>es.forEach(e=>{const el=e.target;el.vis=e.isIntersecting;if(e.isIntersecting)rp(el.i);else gcSoon()}),{root:$('#sc'),rootMargin:'300px 0px'});
  for(let i=0;i<n;i++)addPg(i,[p1.width,p1.height]);S.rs=1;rst(d);setTimeout(()=>S.rs=0,700)}
 function rst(d){const el=S.pg[d.pi||0],sc=$('#sc');if(el&&(d.pi||d.po)){const x=el.getBoundingClientRect(),y=sc.getBoundingClientRect();sc.scrollTop+=x.top-y.top+(d.po||0)*x.height}up()}
-function addPg(i,dim){const el=E('div','pg');el.i=i;el.dim=dim;el.bg=E('canvas');el.ink=E('canvas','ink');el.append(el.bg,el.ink);
+function addPg(i,dim){const el=E('div','pg');el.i=i;el.dim=dim;el.bg=E('canvas');el.hc=E('canvas','hlc');el.ink=E('canvas','ink');el.append(el.bg,el.hc,el.ink);
  el.style.width=dim[0]*S.z+'px';el.style.height=dim[1]*S.z+'px';bind(el);S.pg[i]=el;$('#pgs').append(el);S.io.observe(el)}
 async function bgDraw(i,c,k,own){const el=S.pg[i];c.fillStyle='#fff';c.fillRect(0,0,el.dim[0]*k,el.dim[1]*k);
  if(S.pdf){const p=await S.pdf.getPage(i+1),rt=p.render({canvasContext:c,viewport:p.getViewport({scale:k})});if(own)el.rt=rt;try{await rt.promise}finally{if(own&&el.rt===rt)el.rt=null}return}
@@ -58,7 +58,7 @@ async function rp0(i){const el=S.pg[i];if(!el||el.r===S.z)return;el.r=S.z;const 
  const t0=performance.now();try{await bgDraw(i,oc.getContext('2d'),S.z*d,1)}catch(e){if(t!==el.tk||(e&&e.name==='RenderingCancelledException')){oc.width=oc.height=0;return}throw e}
  if(t!==el.tk){oc.width=oc.height=0;return}if(performance.now()-t0>700)S.df=Math.max(.6,(S.df||1)*.85);
  el.style.width=w+'px';el.style.height=h+'px';
- for(const c of[el.bg,el.ink]){c.width=w*d;c.height=h*d}
+ for(const c of[el.bg,el.hc,el.ink]){c.width=w*d;c.height=h*d}
  el.bg.getContext('2d').drawImage(oc,0,0);oc.width=oc.height=0;ink(i);buildTl(i)}
 // رسم الصفحات: صفحة واحدة في المرة، الأقرب لنص الشاشة الأول، وبعد ما السحب يقف. والصفحات القريبة بتفضل محفوظة
 let rq=new Set(),rb=0,rt=0,lsc=0,gt=0;
@@ -68,11 +68,11 @@ function rpump(){if(rb||!rq.size)return;const w=130-(Date.now()-lsc);if(w>0){cle
  const r=$('#sc').getBoundingClientRect(),cy=r.top+r.height/2;let best=-1,bd=1e9;
  for(const i of[...rq]){const el=S.pg&&S.pg[i];if(!el||el.r===S.z||!nearEl(el,700)){rq.delete(i);continue}const q=el.getBoundingClientRect(),dd=Math.abs(q.top+q.height/2-cy);if(dd<bd){bd=dd;best=i}}
  if(best<0)return;rq.delete(best);rb=1;rp0(best).catch(()=>{}).finally(()=>{rb=0;rpump();gcSoon()})}
-function gcSoon(){clearTimeout(gt);gt=setTimeout(()=>{const m=$('#sc').clientHeight*2;(S.pg||[]).forEach(el=>{if(el&&el.r&&!nearEl(el,m)){el.bg.width=el.ink.width=1;el.r=null;el.tk=(el.tk||0)+1;el.tl&&(el.tl.remove(),el.tl=null)}})},400)}
+function gcSoon(){clearTimeout(gt);gt=setTimeout(()=>{const m=$('#sc').clientHeight*2;(S.pg||[]).forEach(el=>{if(el&&el.r&&!nearEl(el,m)){el.bg.width=el.hc.width=el.ink.width=1;el.r=null;el.tk=(el.tk||0)+1;el.tl&&(el.tl.remove(),el.tl=null)}})},400)}
 $('#sc').addEventListener('scroll',()=>{if(Date.now()-(S.zt||0)>400)lsc=Date.now();clearTimeout(rt);rt=setTimeout(rpump,140)},{passive:true});
-function ds(c,o,k){c.save();c.lineCap=c.lineJoin='round';c.strokeStyle=c.fillStyle=o.c;c.lineWidth=o.w*k*(o.t==='hl'?4:1);if(o.t==='hl')c.globalAlpha=.35;
+function ds(c,o,k){c.save();c.lineCap=c.lineJoin='round';c.strokeStyle=c.fillStyle=o.c;c.lineWidth=o.w*k*(o.t==='hl'?4:1);if(o.t==='hl'){c.globalAlpha=.55;c.globalCompositeOperation='multiply'}
  if(o.t==='im'){const g=im(o.src);if(g.complete&&g.naturalWidth)c.drawImage(g,o.p[0][0]*k,o.p[0][1]*k,o.w*k,o.h*k);c.restore();return}
- if(o.t==='hr'){c.globalAlpha=.4;c.fillStyle=o.c;o.rs.forEach(r=>c.fillRect(r[0]*k,r[1]*k,r[2]*k,r[3]*k));c.restore();return}
+ if(o.t==='hr'){c.globalAlpha=.55;c.globalCompositeOperation='multiply';c.fillStyle=o.c;o.rs.forEach(r=>c.fillRect(r[0]*k,r[1]*k,r[2]*k,r[3]*k));c.restore();return}
  const p=o.p,X=i=>p[i][0]*k,Y=i=>p[i][1]*k;c.beginPath();
  if(o.t==='pen'&&p.some(q=>q[2]>0&&q[2]!==.5)){for(let i=1;i<p.length;i++){c.beginPath();c.lineWidth=o.w*k*(.4+1.2*(p[i][2]+p[i-1][2])/2);c.moveTo(X(i-1),Y(i-1));c.lineTo(X(i),Y(i));c.stroke()}}else if(o.t==='pen'||o.t==='hl'){c.moveTo(X(0),Y(0));for(let i=1;i<p.length-1;i++)c.quadraticCurveTo(X(i),Y(i),(X(i)+X(i+1))/2,(Y(i)+Y(i+1))/2);c.lineTo(X(p.length-1),Y(p.length-1));c.stroke()}
  else if(o.t==='line'){c.moveTo(X(0),Y(0));c.lineTo(X(1),Y(1));c.stroke()}
@@ -80,8 +80,9 @@ function ds(c,o,k){c.save();c.lineCap=c.lineJoin='round';c.strokeStyle=c.fillSty
  else if(o.t==='ell'){c.ellipse((X(0)+X(1))/2,(Y(0)+Y(1))/2,Math.abs(X(1)-X(0))/2||1,Math.abs(Y(1)-Y(0))/2||1,0,0,7);c.stroke()}
  else{c.font=o.w*k+'px sans-serif';c.textBaseline='top';o.s.split('\n').forEach((t,j)=>c.fillText(t,X(0),Y(0)+j*o.w*k*1.25))}
  c.restore()}
-function ink(i){const el=S.pg[i],c=el.ink.getContext('2d'),k=el.ink.width/el.dim[0];c.clearRect(0,0,el.ink.width,el.ink.height);
- (S.d.s[i]||[]).forEach(o=>ds(c,o,k));if(el.cur)ds(c,el.cur,k);el.lz&&el.lz.length&&lzd(c,el,k);LS.r(c,el,k);window.HSR&&HSR(c,el,k)}
+const HLT=o=>o.t==='hl'||o.t==='hr';
+function ink(i){const el=S.pg[i],c=el.ink.getContext('2d'),h=el.hc.getContext('2d'),k=el.ink.width/el.dim[0];c.clearRect(0,0,el.ink.width,el.ink.height);h.clearRect(0,0,el.hc.width,el.hc.height);
+ (S.d.s[i]||[]).forEach(o=>ds(HLT(o)?h:c,o,k));if(el.cur)ds(HLT(el.cur)?h:c,el.cur,k);el.lz&&el.lz.length&&lzd(c,el,k);LS.r(c,el,k);window.HSR&&HSR(c,el,k)}
 // ---------- drawing ----------
 const pt=(e,el)=>{const r=el.getBoundingClientRect();return[(e.clientX-r.left)/S.z,(e.clientY-r.top)/S.z,e.pointerType==='pen'&&e.pressure?+e.pressure.toFixed(2):.5]};
 function sp(o){if(o.t==='im')return[0,1,2,3,4].flatMap(u=>[0,1,2,3,4].map(v=>[o.p[0][0]+o.w*u/4,o.p[0][1]+o.h*v/4]));if(o.t==='hr')return o.rs.flatMap(r=>[0,1,2,3,4].map(k=>[r[0]+r[2]*k/4,r[1]+r[3]/2]));const p=o.p;if(o.t==='pen'||o.t==='hl'||o.t==='tx')return p;const[a,b]=p,r=[],L=(u,v)=>{for(let k=0;k<=10;k++)r.push([u[0]+(v[0]-u[0])*k/10,u[1]+(v[1]-u[1])*k/10])};

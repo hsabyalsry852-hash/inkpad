@@ -382,3 +382,7 @@ html.locked body>*:not(#lkov):not(#eyeov){visibility:hidden!important}
 /* إمكانية الوصول: تركيز واضح بالكيبورد + تقليل الحركة */
 button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,label.btn:focus-within{outline:2px solid var(--acc);outline-offset:2px}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+/* الهايلايت تحت النص: طبقة مستقلة بـ multiply عشان الكلام يفضل واضح */
+.pg{isolation:isolate}
+.pg canvas.hlc{mix-blend-mode:multiply;pointer-events:none}
+#ed.nt .pg canvas.hlc{mix-blend-mode:normal;opacity:.6}
