@@ -366,7 +366,7 @@ jobs:
           cp node_modules/tesseract.js-core/tesseract-core*.js www/lib/tess/
           cp node_modules/tesseract.js-core/tesseract-core*.wasm www/lib/tess/ 2>/dev/null || true
           for L in ara eng; do
-            curl -fsSL --retry 3 https://github.com/tesseract-ocr/tessdata_fast/raw/main/$L.traineddata | gzip -9 > www/lib/tess/$L.traineddata.gz
+            curl -fsSL --retry 3 https://github.com/tesseract-ocr/tessdata_fast/raw/main/$L.traineddata -o www/lib/tess/$L.traineddata
           done
           # ---- offline translation (transformers.js + opus-mt en<->ar) ----
           mkdir -p www/lib/ort
@@ -382,7 +382,7 @@ jobs:
             done
             curl -fsSL --retry 3 https://huggingface.co/Xenova/$M/resolve/main/generation_config.json -o www/models/$M/generation_config.json || true
           done
-          test -s www/lib/tess/tesseract.min.js && test -s www/lib/tess/ara.traineddata.gz && test -s www/models/opus-mt-ar-en/onnx/encoder_model_quantized.onnx
+          test -s www/lib/tess/tesseract.min.js && test -s www/lib/tess/ara.traineddata && test -s www/models/opus-mt-ar-en/onnx/encoder_model_quantized.onnx
           ls www/lib/tess; du -sh www
           cp native/native.js www/native.js
           cd www
