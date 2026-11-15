@@ -56,7 +56,7 @@ public class InkLockPlugin extends Plugin {
             return;
         }
         final Activity a = getActivity();
-        final String title = call.getString("title", "InkPad");
+        final String title = call.getString("title", "A");
         final String sub = call.getString("subtitle", "");
         final AtomicBoolean done = new AtomicBoolean(false);
         a.runOnUiThread(() -> {
