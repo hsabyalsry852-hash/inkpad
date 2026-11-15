@@ -1,5 +1,5 @@
-const C='inkpad-v22';
-const A=['./','index.html','app.js','extra.js','style.css','manifest.json','icon-192.png','icon-512.png'];
+const C='inkpad-v23';
+const A=['./','index.html','app.js','extra.js','plus.js','style.css','manifest.json','icon-192.png','icon-512.png'];
 const CDN=['https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js','https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(async c=>{await c.addAll(A);await Promise.all(CDN.map(u=>c.add(new Request(u,{mode:'cors'})).catch(()=>{})))}));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C&&x!=='inkshare').map(x=>caches.delete(x)))));clients.claim()});

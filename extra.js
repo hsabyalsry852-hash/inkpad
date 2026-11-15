@@ -110,7 +110,7 @@ setInterval(()=>{const n=Date.now(),dt=Math.min(n-lt,10000)/1000;lt=n;if(documen
  const s=ld(),k=dk(new Date());s[k]=(s[k]||0)+dt;const ks=Object.keys(s).sort();ks.slice(0,Math.max(0,ks.length-400)).forEach(x=>delete s[x]);try{localStorage.setItem(KS,JSON.stringify(s))}catch(e){}},5000);
 function stR(){const s=ld(),n=new Date(),b=$('#stb');let wk=0,mx=1,m30=0;const rows=[];
  for(let i=0;i<30;i++){const d=new Date(n.getFullYear(),n.getMonth(),n.getDate()-i),v=s[dk(d)]||0;m30+=v;if(i<7){rows.push([d,v,i]);wk+=v;mx=Math.max(mx,v)}}
- b.innerHTML='';const T=E('div','stt'),l=E('div','em');T.textContent=ft(s[dk(n)]||0);l.textContent='النهاردة';b.append(T,l);
+ b.innerHTML='';const T=E('div','stt'),l=E('div','stl');T.textContent=ft(s[dk(n)]||0);l.textContent='النهاردة';b.append(T,l);
  rows.forEach(([d,v,i])=>{const r=E('div','sbr',"<span></span><div><i></i></div><span></span>"),sp=r.querySelectorAll('span');sp[0].textContent=i?d.toLocaleDateString('ar-EG',{weekday:'long'}):'النهاردة';sp[1].textContent=ft(v);r.querySelector('i').style.width=v>0?Math.max(2,Math.round(v/mx*100))+'%':'0';b.append(r)});
  [['آخر 7 أيام',ft(wk)],['متوسط اليوم (7 أيام)',ft(wk/7)],['آخر 30 يوم',ft(m30)]].forEach(([a,c])=>{const r=E('div','stx'),x=E('span'),y=E('b');x.textContent=a;y.textContent=c;r.append(x,y);b.append(r)})}
 const stO=()=>{$('#mm').hidden=true;stR();$('#stp').hidden=false};

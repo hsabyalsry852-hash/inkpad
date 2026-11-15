@@ -339,3 +339,42 @@ input[type=range]{accent-color:var(--acc)}
 #sgo .sgi img{height:44px;display:block}
 #sgo .sgi b{position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:50%;background:#dc2626;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
 #sgo .mf{padding:10px;display:flex}#sgo .mf .btn{flex:1;font-size:16px}
+
+/* ================= plus.js: قفل · هدف المذاكرة · راحة العين · علامة التحديد ================= */
+#mm [hidden]{display:none!important}
+/* راحة العين: طبقة دافية فوق كل حاجة (من غير ما تمنع اللمس) */
+#eyeov{position:fixed;inset:0;z-index:2147483000;pointer-events:none;background:#ff9d2e;mix-blend-mode:multiply;opacity:0;transition:opacity .25s}
+/* علامة تحديد النص: بنرسمها بنفسنا عشان تظهر دايمًا، وبنخفي تظليل النظام عشان ما يتكررش */
+#selov{position:fixed;inset:0;z-index:8;pointer-events:none;opacity:.4}
+#selov i{position:absolute;background:#2563eb;border-radius:3px}
+.tl span::selection{background:transparent}
+.tl span::-moz-selection{background:transparent}
+/* القفل */
+html.locked body>*:not(#lkov):not(#eyeov){visibility:hidden!important}
+#lkov{position:fixed;inset:0;z-index:2000;background:var(--bg);color:var(--fg);display:flex;align-items:center;justify-content:center;direction:rtl;padding:calc(12px + env(safe-area-inset-top)) 16px calc(12px + env(safe-area-inset-bottom));overflow:auto}
+.lkc{width:min(320px,100%);display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.lki{font-size:40px;line-height:1}.lkc h3{margin:4px 0 0;font-size:20px}.lks{margin:0;color:var(--mut);font-size:14px;min-height:1.2em;unicode-bidi:plaintext}
+.lkd{display:flex;gap:12px;margin:14px 0 4px;height:16px;direction:ltr}
+.lkd i{width:14px;height:14px;border-radius:50%;border:2px solid var(--mut);box-sizing:border-box;transition:background .1s}
+.lkd i.on{background:var(--acc);border-color:var(--acc)}
+.lkd.sh{animation:lksh .4s}@keyframes lksh{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+.lke{margin:0;min-height:1.3em;color:#f87171;font-size:14px}
+.lkp{display:grid;grid-template-columns:repeat(3,72px);gap:12px;direction:ltr;margin:6px 0}
+.lkk{width:72px;height:72px;border-radius:50%;padding:0;font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;background:var(--card)}
+.lkk.e{visibility:hidden}.lkk .i{width:30px;height:30px}
+.lkb{display:flex;gap:8px;width:100%}.lkb .btn{flex:1;padding:12px;font-weight:700}
+#lks .tb1{margin-bottom:10px}.tb1>small{margin-inline-start:auto;color:var(--mut);font-size:13px}.tb1.on>small{color:inherit}
+.it>button.lkb{font-size:18px;opacity:.55;color:inherit}.it>button.lkb.on{opacity:1}
+/* هدف المذاكرة */
+.gc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:14px}
+.gc h4{margin:0 0 10px;font-size:15px}.gn{margin:8px 0;color:var(--mut);font-size:13px;line-height:1.7}.stl{color:var(--mut);margin-bottom:6px}
+.gp{display:flex;align-items:center;gap:10px}.gp>div{flex:1;height:14px;background:var(--bg);border-radius:7px;overflow:hidden}
+.gp i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:7px;transition:width .3s}
+.gp b{font-size:13px;white-space:nowrap}.gp.ok i{background:linear-gradient(90deg,#22c55e,#16a34a)}
+.gs{display:flex;gap:10px;margin:12px 0}.gs>div{flex:1;background:var(--bg);border-radius:12px;padding:10px 6px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.gs b{font-size:22px}.gs small{color:var(--mut);font-size:12px}
+.gd{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:6px 0 12px;direction:rtl}
+.gd span{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;background:var(--bg);color:var(--mut);font-size:12px}
+.gd span.ok{background:#16a34a;color:#fff;font-weight:700}.gd span.td{outline:2px solid var(--acc);outline-offset:1px}
+.gc>.btn{width:100%}
+.dlg{z-index:2100!important}
