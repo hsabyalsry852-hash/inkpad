@@ -44,10 +44,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk InkPad.apk
+          cp android/app/build/outputs/apk/debug/app-debug.apk A.apk
           if gh release view latest >/dev/null 2>&1; then
-            gh release upload latest InkPad.apk --clobber
+            gh release upload latest A.apk --clobber
             gh release edit latest --notes "Build ${GITHUB_SHA::7} (run ${GITHUB_RUN_NUMBER})"
           else
-            gh release create latest InkPad.apk --title "InkPad APK" --notes "Build ${GITHUB_SHA::7} (run ${GITHUB_RUN_NUMBER})" --latest
+            gh release create latest A.apk --title "A APK" --notes "Build ${GITHUB_SHA::7} (run ${GITHUB_RUN_NUMBER})" --latest
           fi
